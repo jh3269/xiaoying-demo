@@ -321,7 +321,7 @@ textarea.input{height:auto;padding:12px 14px;line-height:1.6;resize:none}
   <aside class="side intro" id="intro">
     <span class="tag">小影 · AI 与内容创作 · 产品 Demo</span>
     <h1>镜头体检</h1>
-    <p>帮第一次拍制作教程的新手，在剪辑之前由 AI 站在<b>观众</b>的角度检查“有没有讲清楚”，找出漏拍和看不清的步骤，并按成本从低到高给出补救方案：<b>原素材找回 → 补拍 → 图文卡片 → AI 过渡</b>。</p>
+    <p>帮刚开始拍教程的新手，在剪辑之前由 AI 站在<b>观众</b>的角度检查“有没有讲清楚”，找出漏拍和看不清的步骤，并按真实优先的顺序给出补救方案：<b>原素材找回 → 补拍 → 图文卡片 → AI 过渡</b>。</p>
     <h2>推荐演示路径</h2>
     <ol>
       <li>首页点「开始剪辑」，选好素材后点下一步</li>
@@ -621,7 +621,7 @@ function albumNext(){
   if(S.entry==='tool'){go('setup');return;}
   sheet(`<div style="display:flex;gap:12px;align-items:flex-start">
       <div style="font-size:30px">🩺</div>
-      <div><div style="font-weight:700;font-size:17px;line-height:1.4">这 12 段素材看起来是一条制作教程</div>
+      <div><div style="font-weight:700;font-size:17px;line-height:1.4">这 ${Object.keys(D().clips).length} 段素材看起来是一条制作教程</div>
       <div class="muted" style="margin-top:6px;line-height:1.6">剪辑之前，要不要先让 AI 站在<b style="color:var(--text)">观众</b>的角度检查一遍：有没有漏拍的步骤、哪里看不清？大约 20 秒。</div></div></div>
     <div class="btns"><button class="btn btn-primary" onclick="go('setup')">开始体检</button>
     <button class="btn btn-ghost" onclick="closeSheet();toast('进入普通剪辑（Demo 未展开）')">直接剪辑</button></div>
@@ -698,7 +698,7 @@ SCREENS.error=()=>({html:`${topBar('镜头体检',{onBack:"goHome()"})}
     <div class="h1">这次没检查完</div>
     <div class="muted" style="margin-top:10px;line-height:1.7">网络连接中断了。<br>你的素材都还在，不会丢失。</div>
     <div class="card" style="text-align:left;margin-top:22px;font-size:13px;line-height:1.8;color:var(--sub)">
-      已完成：识别 12 段素材 ✓<br>中断在：对照制作步骤<br>重新检查会从中断处继续，大约 10 秒
+      已完成：识别 ${Object.keys(D().clips).length} 段素材 ✓<br>中断在：对照制作步骤<br>重新检查会从中断处继续，大约 10 秒
     </div>
   </div>
   <div class="bottombar" style="flex-direction:column">
