@@ -249,9 +249,13 @@ input,textarea{font:inherit;color:inherit}
 .vf-hints{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
 .vf-hints span{font-size:12px;background:rgba(0,0,0,.5);padding:5px 10px;border-radius:99px;backdrop-filter:blur(6px)}
 .vf-bottom{height:120px;display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom)}
-.shutter{width:70px;height:70px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}
-.shutter i{width:56px;height:56px;border-radius:50%;background:#fff;transition:transform .1s}
-.shutter:active i{transform:scale(.88)}
+.recbtn{width:70px;height:70px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}
+.recbtn i{width:54px;height:54px;border-radius:50%;background:#FF3B30;transition:all .2s}
+.recbtn.on i{width:26px;height:26px;border-radius:6px}
+.rec{position:absolute;top:52px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:6px;background:rgba(0,0,0,.55);padding:4px 10px;border-radius:6px;font-size:13px;font-variant-numeric:tabular-nums;z-index:3}
+.rec.on{display:flex}
+.rec i{width:8px;height:8px;border-radius:50%;background:#FF3B30;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
 .vf-side{width:52px;font-size:11px;color:#ccc;text-align:center}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
 .flash.go{animation:flash .35s}
@@ -260,16 +264,18 @@ input,textarea{font:inherit;color:inherit}
 
 /* ---------- 成片预览 ---------- */
 .player{position:relative;width:72%;margin:0 auto;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#000}
-.player .seg{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.player .seg{position:absolute;inset:0;opacity:0}
 .player .seg.on{opacity:1}
 .player .seg .frame{position:absolute;inset:0;border-radius:0;aspect-ratio:auto}
-.player .seg.on .frame:not(.card-frame) .frame-img{animation:kb 2.2s ease-out forwards}
 @keyframes kb{from{transform:scale(1)}to{transform:scale(1.09)}}
-.player .cap{position:absolute;left:8px;right:8px;bottom:22px;text-align:center;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);line-height:1.4}
-.player .prog{position:absolute;left:6px;right:6px;top:6px;display:flex;gap:2px;z-index:3}
-.player .prog i{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
-.player .prog i b{display:block;height:100%;width:0;background:#fff}
-.player .ptime{position:absolute;right:8px;bottom:6px;font-size:10px;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums;z-index:3}
+.player .cap{position:absolute;left:8px;right:8px;bottom:46px;text-align:center;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);line-height:1.4}
+.player .pbar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.65));z-index:3}
+.player .pp{width:18px;font-size:13px;color:#fff;text-align:center}
+.player .ptrack{flex:1;position:relative;height:3px;border-radius:2px;background:rgba(255,255,255,.3)}
+.player .ptrack .mk{position:absolute;top:0;bottom:0;background:rgba(255,184,0,.75)}
+.player .ptrack .fill{position:absolute;left:0;top:0;bottom:0;background:#fff;border-radius:2px}
+.player .ptrack .fill::after{content:"";position:absolute;right:-5px;top:-4px;width:11px;height:11px;border-radius:50%;background:#fff}
+.player .ptime{font-size:10px;color:rgba(255,255,255,.9);font-variant-numeric:tabular-nums}
 .player .paused{position:absolute;inset:0;display:none;place-items:center;font-size:40px;background:rgba(0,0,0,.25);z-index:4}
 .player.is-paused .paused{display:grid}
 .seg-tabs{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin:0 auto 12px;width:220px}
@@ -522,7 +528,7 @@ const openGaps = ()=>steps().filter(s=>isGap(s) && !S.res[s.id]);
 const $ = s=>document.querySelector(s);
 let timers=[];
 const later=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t);return t;};
-function clearTimers(){timers.forEach(clearTimeout);timers=[];stopCam();}
+function clearTimers(){timers.forEach(clearTimeout);timers.forEach(clearInterval);recTimer=null;timers=[];stopCam();}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
 function sheet(html){$('#sheet-root').innerHTML=`<div class="backdrop" onclick="closeSheet()"></div><div class="sheet"><div class="grab"></div>${html}</div>`;}
 function closeSheet(){$('#sheet-root').innerHTML='';}
@@ -865,10 +871,10 @@ SCREENS.reshoot=({id})=>{
         <button class="switch ${S.realCam?'on':''}" onclick="toggleCam(this)"><i></i>真实摄像头</button></div>
       <div class="meter"><div class="track"><div class="goal"></div><div class="fill" id="mfill" style="height:${lit?78:45}%;background:${lit?'var(--green)':'var(--amber)'}"></div></div>亮度</div>
       <div class="vf-hints" id="hints">${lit?'<span>☀️ 光线可以了</span><span>📍 对齐虚线框</span>':'<span>📍 对齐虚线框</span><span>☀️ 太暗，靠近窗边</span><span>🔍 拍清切面的三层</span>'}</div>
-      <div class="flash" id="flash"></div>
+      <div class="rec" id="rec"><i></i><span id="rectime">00:00</span></div>
     </div>
     <div class="vf-bottom"><div class="vf-side">${frame(c,{label:false,dur:false})}<div style="margin-top:4px">原镜头</div></div>
-      <button class="shutter" onclick="shoot('${id}')" aria-label="拍摄"><i></i></button><div class="vf-side">第 ${S.tries+1} 次</div></div>
+      <button class="recbtn" id="recbtn" onclick="toggleVideoRec('${id}')" aria-label="录制"><i></i></button><div class="vf-side">第 ${S.tries+1} 条<br><span id="rechint">点按开始录制</span></div></div>
   </div>`,after:()=>{if(S.realCam)startCam();}};
 };
 let camStream=null;
@@ -881,11 +887,23 @@ function startCam(){
 }
 function stopCam(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}}
 function toggleCam(el){S.realCam=!S.realCam;el.classList.toggle('on',S.realCam);if(S.realCam)startCam();else{stopCam();const v=$('#camv');v&&v.remove();$('#scene').style.display='';}}
+// 录像：点一下开始，再点一下停止；录满原镜头时长自动停止
+let recTimer=null;
+function toggleVideoRec(id){
+  const btn=$('#recbtn'), rec=$('#rec');
+  if(recTimer){stopRec(id);return;}
+  const s=steps().find(x=>x.id===id), c=D().clips[s.rclip||s.clips[0]||D().reshootClip], max=(c.m?SECS[c.m]:6)*1000;
+  const v=$('#scene video');if(v){try{v.currentTime=0;}catch(e){}const r=v.play();r&&r.catch(()=>{});}
+  btn.classList.add('on');rec.classList.add('on');$('#rechint').textContent='再点一下停止';
+  const t0=Date.now();
+  recTimer=setInterval(()=>{const ms=Date.now()-t0;$('#rectime')&&($('#rectime').textContent='00:'+String(Math.floor(ms/1000)).padStart(2,'0'));if(ms>=max)stopRec(id);},200);
+  timers.push(recTimer);
+}
+function stopRec(id){clearInterval(recTimer);recTimer=null;const b=$('#recbtn');b&&b.classList.remove('on');const r=$('#rec');r&&r.classList.remove('on');shoot(id);}
 function shoot(id){
-  const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
   const s=steps().find(x=>x.id===id), c=D().clips[s.rclip||s.clips[0]||D().reshootClip];
   // 补拍回来的完整片段（从头播一遍）
-  const take=dim=>c&&c.m?`<div class="take"><video src="media/${c.m}.mp4" poster="media/${c.m}.jpg" muted loop playsinline autoplay style="${dim?'filter:brightness(.55)':''}"></video><span>补拍 · ${SECS[c.m]} 秒</span></div>`:'';
+  const take=dim=>c&&c.m?`<div class="take"><video src="media/${c.m}.mp4" poster="media/${c.m}.jpg" muted loop playsinline autoplay style="${dim?'filter:brightness(.55)':''}"></video><span>▶ 刚录的补拍</span></div>`:'';
   later(()=>{
     sheet(`<div style="display:flex;align-items:center;gap:10px"><div class="spinner"></div><b>AI 正在检查这段补拍…</b></div>`);
     later(()=>{
@@ -895,9 +913,9 @@ function shoot(id){
           <div class="check-li"><span style="color:var(--green)">✓</span> 主体清晰</div>
           <div class="check-li"><span style="color:var(--amber)">!</span> 亮度 46%，细节仍看不清（建议 65% 以上）</div>
           <div class="muted small" style="margin-top:6px">试试把蛋糕端到窗边，或打开台灯。</div>
-          <div class="btns"><button class="btn btn-primary" onclick="S.tries=1;closeSheet();render();toast('已移到窗边，光线变好了')">重拍</button>
+          <div class="btns"><button class="btn btn-primary" onclick="S.tries=1;closeSheet();render();toast('已移到窗边，光线变好了，再录一条')">重录一条</button>
           <button class="btn btn-ghost" onclick="closeSheet();go('card',{id:'${id}'},{replace:true})">改用图文卡片</button>
-          <button class="btn btn-ghost" onclick="closeSheet();resolve('${id}','reshoot','已使用这次补拍')">就用这张</button></div>`);
+          <button class="btn btn-ghost" onclick="closeSheet();resolve('${id}','reshoot','已使用这次补拍')">就用这段</button></div>`);
       } else {
         sheet(`<div style="font-weight:700;font-size:17px">补拍合格 ✓</div>${take(false)}
           <div class="check-li"><span style="color:var(--green)">✓</span> 机位和原镜头一致，剪进去不会跳</div>
@@ -1008,34 +1026,37 @@ const SECS={c1:4.5,c2:3.8,c3:3.8,c4:3.8,c5:9,c6:5,c7:6.8,c8:2.6,c9:7.2,c10:5,c11
 let paused=false;
 const mmss=ms=>{const t=Math.round(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};
 function startPlayer(){
-  const seq=buildSeq(S.player), el=$('#player'), total=seq.reduce((a,x)=>a+(x.dur||1800),0);
-  el.innerHTML=`<div class="prog">${seq.map(()=>'<i><b></b></i>').join('')}</div>`+seq.map(x=>`<div class="seg">${x.html}${x.cap?`<div class="cap">${esc(x.cap)}</div>`:''}</div>`).join('')+'<div class="paused">▶</div><div class="ptime" id="ptime"></div>';
-  const segs=el.querySelectorAll('.seg'), bars=el.querySelectorAll('.prog i');
+  const seq=buildSeq(S.player), el=$('#player'), len=i=>seq[i].dur||1800, total=seq.reduce((a,x,i)=>a+len(i),0);
+  const starts=[];seq.reduce((a,x,i)=>(starts[i]=a,a+len(i)),0);
+  // 进度条上用黄色标出补上的片段
+  const marks=seq.map((x,i)=>x.badge?`<i class="mk" style="left:${starts[i]/total*100}%;width:${len(i)/total*100}%"></i>`:'').join('');
+  el.innerHTML=seq.map(x=>`<div class="seg">${x.html}${x.cap?`<div class="cap">${esc(x.cap)}</div>`:''}</div>`).join('')
+    +`<div class="paused">▶</div><div class="pbar"><span class="pp" id="pp">❚❚</span><div class="ptrack">${marks}<b class="fill" id="pfill"></b></div><span class="ptime" id="ptime">0:00 / ${mmss(total)}</span></div>`;
+  const segs=el.querySelectorAll('.seg');
   let idx=0, elapsed=0; paused=false;
   const vid=i=>segs[i].querySelector('video');
   const show=()=>{
     elapsed=0;
     segs.forEach((g,i)=>{g.classList.toggle('on',i===idx);const v=vid(i);if(v&&i!==idx)v.pause();});
-    bars.forEach((b,i)=>{b.firstElementChild.style.width=i<idx?'100%':'0';});
     const v=vid(idx);
     if(v){try{v.currentTime=0;}catch(e){}const r=v.play();r&&r.catch(()=>{});}
   };
   const next=()=>{idx=(idx+1)%seq.length;show();};
   const tick=()=>{
     if(!$('#player'))return;
-    const v=vid(idx), len=seq[idx].dur||1800;
+    const v=vid(idx);
     if(!paused){
-      if(v){elapsed=v.currentTime*1000; if(v.ended||elapsed>=len-60){next();return;} if(v.paused&&v.readyState>2){const r=v.play();r&&r.catch(()=>{});}}
-      else{elapsed+=100; if(elapsed>=len){next();return;}}
+      if(v){elapsed=v.currentTime*1000; if(v.ended||elapsed>=len(idx)-60){next();return;} if(v.paused&&v.readyState>2){const r=v.play();r&&r.catch(()=>{});}}
+      else{elapsed+=100; if(elapsed>=len(idx)){next();return;}}
     }
-    bars[idx].firstElementChild.style.width=Math.min(100,elapsed/len*100)+'%';
-    const before=seq.slice(0,idx).reduce((a,x)=>a+(x.dur||1800),0);
-    $('#ptime').textContent=`${mmss(before+elapsed)} / ${mmss(total)}`;
+    const now=starts[idx]+Math.min(elapsed,len(idx));
+    $('#pfill').style.width=now/total*100+'%';
+    $('#ptime').textContent=`${mmss(now)} / ${mmss(total)}`;
   };
   show();
   const h=setInterval(tick,100);timers.push(h);
 }
-function togglePlay(){paused=!paused;const p=$('#player');p.classList.toggle('is-paused',paused);
+function togglePlay(){paused=!paused;const p=$('#player');p.classList.toggle('is-paused',paused);$('#pp').textContent=paused?'▶':'❚❚';
   const v=p.querySelector('.seg.on video');if(v){if(paused)v.pause();else{const r=v.play();r&&r.catch(()=>{});}}}
 function exportFilm(){
   sheet(`<div style="font-weight:700;font-size:17px" id="exT">正在导出 1080P…</div><div class="bar" style="margin-top:16px"><i id="exB"></i></div><div class="btns" id="exBtns"></div>`);
