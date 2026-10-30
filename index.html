@@ -94,8 +94,11 @@ input,textarea{font:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- 画面（占位素材） ---------- */
-.frame{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:9/16;background:#222;flex-shrink:0}
+.frame{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#222;flex-shrink:0}
 .frame-img{position:absolute;inset:0;display:grid;place-items:center;transition:filter .5s}
+.frame-img img,.frame-img video,.scene video,.ghost img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.frame-img.contain video{object-fit:contain;background:#0b0b0d}
+.frame.is-bright .frame-img img,.frame.is-bright .frame-img video{filter:brightness(2.3) contrast(.72) saturate(.8)}
 .frame-img span{font-size:30px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.15))}
 .frame.big .frame-img span{font-size:84px}
 .frame.mini{border-radius:6px;width:30px}
@@ -227,6 +230,7 @@ input,textarea{font:inherit;color:inherit}
 .vf-view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ghost{position:absolute;left:14%;right:14%;top:16%;bottom:24%;border:2px dashed rgba(255,255,255,.75);border-radius:18px;display:grid;place-items:center;pointer-events:none}
 .ghost span{font-size:100px;opacity:.22}
+.ghost img{opacity:.22;border-radius:16px}
 .ghost em{position:absolute;top:-26px;left:0;font-style:normal;font-size:12px;color:#fff;background:rgba(0,0,0,.4);padding:2px 8px;border-radius:6px}
 .vf-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:10px 12px;gap:8px;z-index:3;background:linear-gradient(rgba(0,0,0,.5),transparent)}
 .vf-top .t{flex:1;font-weight:600}
@@ -252,7 +256,7 @@ input,textarea{font:inherit;color:inherit}
 .check-li{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}
 
 /* ---------- 成片预览 ---------- */
-.player{position:relative;width:62%;margin:0 auto;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#000}
+.player{position:relative;width:72%;margin:0 auto;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#000}
 .player .seg{position:absolute;inset:0;opacity:0;transition:opacity .35s}
 .player .seg.on{opacity:1}
 .player .seg .frame{position:absolute;inset:0;border-radius:0;aspect-ratio:auto}
@@ -282,7 +286,7 @@ input,textarea{font:inherit;color:inherit}
 .trim{position:relative;height:44px;border-radius:8px;background:repeating-linear-gradient(90deg,#3a3a46 0 22px,#30303b 22px 44px);margin-top:12px}
 .trim .sel{position:absolute;top:-2px;bottom:-2px;left:62%;right:0;border:2.5px solid var(--accent);border-radius:8px;background:rgba(255,91,69,.15)}
 .trimlbl{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:6px}
-.spot{position:absolute;right:8%;top:10%;width:42%;height:30%;border:2.5px solid var(--accent);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.45);animation:pulse 1.4s ease-in-out infinite}
+.spot{position:absolute;left:3%;top:3%;width:72%;height:30%;border:2.5px solid var(--accent);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.45);animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{border-color:#FFB3A8}}
 .swatches{display:flex;gap:10px}
 .swatches button{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
@@ -323,7 +327,7 @@ textarea.input{height:auto;padding:12px 14px;line-height:1.6;resize:none}
     </ol>
     <h2>异常状态</h2>
     <p>用右侧「演示控制台」切换：分析失败、网络很慢、认不出主题、AI 误判。</p>
-    <div class="note">所有 AI 结果均为预设的模拟数据；画面为占位插画，后续替换为真实拍摄素材。</div>
+    <div class="note">教程素材来自我本人拍摄的烘焙视频。为了演示，人为拿掉了“冷藏”“蒸麻薯”两段，并把成品切面调暗。所有 AI 结果均为预设的模拟数据。</div>
   </aside>
 
   <div class="phone">
@@ -345,75 +349,79 @@ textarea.input{height:auto;padding:12px 14px;line-height:1.6;resize:none}
 const G = (a,b)=>`linear-gradient(160deg,${a},${b})`;
 const DATA = {
   tutorial:{
-    topic:'巴斯克芝士蛋糕', label:'制作教程', total:'1 分 18 秒',
+    topic:'麻薯巴斯克蛋糕', label:'制作教程', total:'1 分 11 秒',
     clips:{
-      1:{e:'🧀🥚🥛',t:'材料全家福',g:G('#F8E9D2','#E7C597'),d:'0:06',tag:'备料'},
-      2:{e:'⚖️',t:'称量奶油奶酪',g:G('#EDE6DA','#CDBFA8'),d:'0:05',tag:'备料'},
-      3:{e:'🥣',t:'奶酪加糖搅拌',g:G('#F3E3C8','#D9B884'),d:'0:08',tag:'搅拌'},
-      4:{e:'🥚',t:'逐个加入鸡蛋',g:G('#FFF1CF','#F2C86B'),d:'0:07',tag:'加蛋'},
-      5:{e:'🥛',t:'倒入淡奶油',g:G('#F4F1EA','#D6D0C2'),d:'0:05',tag:'加奶油'},
-      6:{e:'🌀',t:'搅拌均匀',g:G('#F2E2C4','#CFAE76'),d:'0:08',tag:'搅拌'},
-      7:{e:'📜',t:'折油纸',g:G('#F1ECE2','#C9BBA2'),d:'0:06',tag:'油纸'},
-      8:{e:'🫗',t:'面糊倒入模具',g:G('#F0DDBA','#C99B5A'),d:'0:06',tag:'入模'},
-      9:{e:'🔥',t:'放入烤箱',g:G('#3A2A20','#8A4B22'),d:'0:04',tag:'烤箱'},
-      10:{e:'🎂',t:'出炉',g:G('#7A4A26','#C98447'),d:'0:05',tag:'出炉',dark:true},
-      11:{e:'🔪🍰',t:'切开看切面',g:G('#E8C793','#9C6434'),d:'0:06',tag:'切面',dark:true},
-      12:{e:'😋',t:'试吃',g:G('#F6DFC0','#E0A86E'),d:'0:05',tag:'试吃'},
+      1:{m:'c1',t:'奶油奶酪加糖',d:'0:04',tag:'备料'},
+      2:{m:'c2',t:'分次加入鸡蛋',d:'0:04',tag:'加蛋'},
+      3:{m:'c3',t:'淡奶油、玉米淀粉',d:'0:04',tag:'搅拌'},
+      4:{m:'c4',t:'拌入奥利奥碎',d:'0:04',tag:'奥利奥'},
+      5:{m:'c5',t:'震气泡、进烤箱',d:'0:09',tag:'烤箱'},
+      6:{m:'c6',t:'出炉',d:'0:05',tag:'出炉'},
+      7:{m:'c7',t:'融化黑巧',d:'0:07',tag:'巧克力'},
+      8:{m:'c8',t:'淋在巴斯克上',d:'0:03',tag:'淋面'},
+      9:{m:'c9',t:'调麻薯面糊',d:'0:07',tag:'麻薯'},
+      10:{m:'c10',t:'切成 6 份',d:'0:05',tag:'切块'},
+      11:{m:'c11',t:'包麻薯、修形',d:'0:07',tag:'包裹'},
+      12:{m:'c12',t:'撒可可粉、装饰',d:'0:04',tag:'装饰'},
+      13:{m:'c13',dm:'c13d',t:'成品切面',d:'0:09',tag:'切面',dark:true},
     },
-    extra:[{e:'🐱',t:'',g:G('#C9D6E3','#8FA3B8')},{e:'☁️',t:'',g:G('#BFD9F2','#6FA4D8')},{e:'🍜',t:'',g:G('#F2D6B0','#C8874A')},{e:'📄',t:'',g:G('#ECECEC','#BDBDBD')},{e:'🌇',t:'',g:G('#F7B58A','#7A5AA8')},{e:'🧋',t:'',g:G('#E9D5BC','#A97E52')}],
+    extra:[{m:'x1'},{m:'x92'},{m:'x5'},{m:'x70'},{m:'x9'},{e:'🐱',g:G('#C9D6E3','#8FA3B8')}],
     steps:[
-      {id:'s1',name:'备料展示',clips:[1,2],status:'ok'},
-      {id:'s2',name:'奶油奶酪软化',clips:[],status:'missing',rclip:2,
-        q:'奶油奶酪要软化到什么程度？直接从冰箱拿出来行吗？',
-        why:'素材里没有出现软化后的状态。这是新手最容易失败的一步：奶酪太硬会结块。',
-        tip:'拍下奶油奶酪软化后的状态（手指按压 5 秒）',
-        opts:[
-          {k:'card',t:'插入图文卡片',d:'用一张卡片讲清楚软化标准，标注“示意”',cost:'约 30 秒',reco:'这一步已经做完了，补拍要重新准备材料'},
-          {k:'reshoot',t:'补拍',d:'如果还有奶油奶酪，拍 5 秒手指按压的状态',cost:'约 5 分钟'},
-          {k:'nogen',t:'AI 生成这一步的画面',d:'不提供：教程是要照着做的，AI 生成的“软化状态”可能是错的，会误导观众'},
-          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
-        ],
-        card:{title:'奶油奶酪软化到什么程度？',body:'室温放置约 1 小时\n手指按下能轻松留下凹痕\n太硬会结块，太软会出油'}},
-      {id:'s3',name:'加糖、蛋、淡奶油搅拌',clips:[3,4,5,6],status:'ok'},
-      {id:'s4',name:'面糊过筛',clips:[],status:'partial',
-        q:'面糊要过筛吗？成品这么顺滑是怎么做到的？',
-        why:'过筛只在第 6 段结尾的 3 秒里、画面右上角出现，很容易在剪辑时被剪掉。',
-        tip:'过筛单独拍一个镜头，不要只在角落带过',
-        found:{clip:6,range:'0:05 – 0:08'},
-        opts:[
-          {k:'found',t:'用原素材里的片段',d:'第 6 段 0:05–0:08 拍到了过筛，单独截出来放大',cost:'0 成本',reco:'你其实拍到了，直接用真实画面最好'},
-          {k:'card',t:'插入图文卡片',d:'用文字说明过筛的作用',cost:'约 30 秒'},
-          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
-        ],
-        card:{title:'面糊过筛一遍',body:'去掉没搅开的小颗粒\n成品口感会更顺滑'}},
-      {id:'s5',name:'铺油纸、入模',clips:[7,8],status:'ok'},
-      {id:'s6',name:'烘烤',clips:[9],status:'jump',
+      {id:'s1',name:'奶酪面糊',clips:[1,2,3],status:'ok'},
+      {id:'s2',name:'拌入奥利奥、入模',clips:[4],status:'ok'},
+      {id:'s3',name:'烘烤',clips:[5,6],status:'partial',
         q:'烤多少度？烤多久？',
-        why:'从“放入烤箱”直接跳到了“出炉”，温度和时间都没有交代。',
-        tip:'放入烤箱时说一句温度和时间，或拍一下烤箱面板',
+        why:'温度和时间只在第 5 段后半、烤箱面板上闪过 3 秒，画面很小，很容易在剪辑时被剪掉。',
+        tip:'设定烤箱时停 2 秒，拍清楚面板上的温度和时间',
+        found:{clip:5,range:'0:06 – 0:09'},
         opts:[
-          {k:'card',t:'插入烘烤参数卡',d:'“220°C · 25 分钟”，接在放入烤箱之后',cost:'约 30 秒',reco:'关键信息是数字，用卡片讲最清楚'},
-          {k:'ai',t:'AI 生成过渡空镜',d:'生成 2 秒烤箱亮灯的画面做衔接，会标注“AI 生成”',cost:'约 20 秒'},
+          {k:'found',t:'用原素材里的片段',d:'第 5 段 0:06–0:09 拍到了烤箱面板，截出来放大、多停留 2 秒',cost:'0 成本',reco:'你其实拍到了，直接用真实画面最可信'},
+          {k:'card',t:'插入烘烤参数卡',d:'用卡片写清“210°C · 25 分钟”',cost:'约 30 秒'},
           {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
         ],
-        card:{title:'220°C · 25 分钟',body:'烤到表面呈深焦糖色\n轻晃模具，中心仍会微微晃动'}},
-      {id:'s7',name:'出炉 & 切面',clips:[10,11,12],status:'weak',
-        q:'表面是焦糖色还是烤焦了？切面是流心吗？看不清。',
-        why:'第 10、11 段画面偏暗。巴斯克最重要的焦糖色表面和流心切面，观众看不清。',
-        tip:'出炉后先端到窗边，再拍表面和切面',
+        card:{title:'210°C · 25 分钟',body:'上下火 210°C\n烤到表面深焦糖色'}},
+      {id:'s4',name:'冷藏过夜',clips:[],status:'jump',
+        q:'刚出炉就能淋巧克力吗？要冷藏多久？',
+        why:'从“出炉”直接跳到了“融化黑巧”，中间放凉、冷藏一整晚没有交代。新手直接淋会化开。',
+        tip:'出炉后补一句“冷藏过夜”，或拍一下放进冰箱',
         opts:[
-          {k:'reshoot',t:'补拍表面和切面',d:'蛋糕还在的话，端到窗边重拍，AI 帮你对齐原来的机位',cost:'约 2 分钟',reco:'成品还在，补拍成本低、效果最好'},
+          {k:'card',t:'插入一张提示卡',d:'“放凉后冷藏过夜”，接在出炉之后',cost:'约 30 秒',reco:'关键是时间信息，用卡片讲最清楚'},
+          {k:'ai',t:'AI 生成过渡空镜',d:'生成 2 秒“一晚过去”的空镜做衔接，会标注“AI 生成”',cost:'约 20 秒'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ],
+        card:{title:'放凉后冷藏过夜',body:'巴斯克出炉先放凉\n冷藏一晚再淋巧克力\n否则会化开、不成形'}},
+      {id:'s5',name:'巧克力淋面',clips:[7,8],status:'ok'},
+      {id:'s6',name:'调麻薯面糊',clips:[9],status:'ok'},
+      {id:'s7',name:'蒸麻薯',clips:[],status:'missing',rclip:9,
+        q:'麻薯面糊怎么变成能包的面皮？蒸多久？',
+        why:'调好面糊之后，直接就到了包麻薯。蒸的时间和蒸好后的状态都没有拍到，这是新手最容易失败的一步。',
+        tip:'蒸好后拍一下拉扯麻薯的状态（有韧性、能拉长）',
+        opts:[
+          {k:'card',t:'插入图文卡片',d:'用一张卡片讲清蒸的时间和蒸好的状态，标注“示意”',cost:'约 30 秒',reco:'麻薯已经包好了，补拍要重新做一份'},
+          {k:'reshoot',t:'补拍',d:'如果还有剩下的麻薯面团，拍 5 秒拉扯的状态',cost:'约 5 分钟'},
+          {k:'nogen',t:'AI 生成这一步的画面',d:'不提供：教程是要照着做的，AI 生成的“蒸好状态”可能是错的，会误导观众'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ],
+        card:{title:'大火蒸 25 分钟',body:'盖保鲜膜、扎几个小孔\n中途取出搅拌一次，再蒸 3 分钟\n揉到有韧性、能拉长就好'}},
+      {id:'s8',name:'切块、包麻薯',clips:[10,11],status:'ok'},
+      {id:'s9',name:'撒可可粉、装饰',clips:[12],status:'ok'},
+      {id:'s10',name:'成品切面',clips:[13],status:'weak',
+        q:'切开是什么样？奥利奥夹心看不清。',
+        why:'第 13 段画面偏暗。切面是整条视频的高光时刻，现在观众看不清三层结构。',
+        tip:'拍成品切面时端到窗边，或打开补光灯',
+        opts:[
+          {k:'reshoot',t:'补拍切面',d:'蛋糕还在的话，端到窗边重拍，AI 帮你对齐原来的机位',cost:'约 2 分钟',reco:'成品还在，补拍成本低、效果最好'},
           {k:'brighten',t:'一键提亮',d:'马上就能用，但暗部会出现明显噪点',cost:'即时'},
           {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
         ]},
     ],
-    wrong:{id:'s5',status:'missing',q:'要铺油纸吗？没看到这一步。',why:'没有识别到铺油纸的镜头。',opts:[
-      {k:'card',t:'插入图文卡片',d:'用文字说明铺油纸的做法',cost:'约 30 秒'},
-      {k:'skip',t:'先跳过',d:'不处理',cost:''}],card:{title:'模具里铺好油纸',body:'揉皱后再铺，更容易贴合\n边缘留高一些'}},
-    reshootClip:10,
+    wrong:{id:'s2',status:'missing',q:'倒进模具后要震出气泡吗？没看到这一步。',why:'没有识别到震气泡的镜头。',opts:[
+      {k:'card',t:'插入图文卡片',d:'用文字说明震气泡的做法',cost:'约 30 秒'},
+      {k:'skip',t:'先跳过',d:'不处理',cost:''}],card:{title:'轻震几下，震出气泡',body:'模具在桌面上轻磕 2–3 下\n烤出来组织更细腻'}},
+    reshootClip:13,
     caption:[
-      {title:'第一次做巴斯克｜7 步讲清楚，新手也不翻车🧀',body:'📝 步骤\n1. 备料：奶油奶酪 250g、糖 60g、鸡蛋 2 个、淡奶油 120g\n2. 奶油奶酪室温软化，按下能留下凹痕\n3. 依次加糖、蛋、淡奶油，搅拌均匀\n4. 面糊过筛一遍，口感更顺滑\n5. 铺油纸、入模\n6. 220°C 烤 25 分钟\n7. 冷藏一晚再切，切面更好看\n\n#巴斯克芝士蛋糕 #烘焙新手 #烘焙教程'},
-      {title:'巴斯克芝士蛋糕｜焦香流心，成败关键在第 2 步',body:'很多人做巴斯克结块，其实是奶油奶酪没软化好。\n这次把每一步的状态都拍清楚了👇\n\n软化：按下有凹痕 → 搅拌 → 过筛 → 220°C 25 分钟\n\n#巴斯克 #烘焙日记 #芝士蛋糕'},
+      {title:'麻薯巴斯克｜10 步讲清楚，新手也不翻车🍫',body:'📝 步骤\n1. 奶油奶酪 250g + 糖 45g 搅匀，分次加 2 个蛋\n2. 加淡奶油 180g、玉米淀粉 8g，拌入奥利奥碎 50g\n3. 倒入 6 寸模具，轻震出气泡\n4. 210°C 烤 25 分钟\n5. 放凉后冷藏过夜\n6. 黑巧 150g + 淡奶油 140g + 黄油 20g 融化，淋在巴斯克上\n7. 糯米粉 120g、玉米淀粉 30g、可可粉 12g、糖 35g、牛奶 210g、玉米油 20g 调成麻薯糊\n8. 大火蒸 25 分钟，中途搅拌一次\n9. 巴斯克切 6 份，包上麻薯、修形\n10. 撒可可粉、放巧克力装饰\n\n#麻薯巴斯克 #烘焙教程 #巴斯克蛋糕'},
+      {title:'巧克力麻薯巴斯克｜成败关键是“冷藏过夜”',body:'很多人淋面化开，是因为巴斯克没冷藏透。\n这次把每一步的时间都标清楚了👇\n\n210°C 25 分钟 → 冷藏过夜 → 淋面 → 蒸麻薯 25 分钟 → 包裹\n\n#麻薯巴斯克 #烘焙日记 #巧克力'},
     ],
   },
   vlog:{
@@ -502,7 +510,7 @@ resetState();
 const D = ()=>DATA[S.type];
 function steps(){
   return D().steps.map(s=>{
-    if(S.type==='tutorial' && S.scenario==='wrong' && s.id==='s5') return {...s,...D().wrong};
+    if(S.type==='tutorial' && S.scenario==='wrong' && s.id===D().wrong.id) return {...s,...D().wrong};
     return s;
   });
 }
@@ -520,9 +528,16 @@ function sheet(html){$('#sheet-root').innerHTML=`<div class="backdrop" onclick="
 function closeSheet(){$('#sheet-root').innerHTML='';}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
+// 有 m 的是真实素材：缩略图用封面 jpg，o.video 时用 mp4；dm 是“拍坏了”的原始版本
+function media(c,o={}){
+  const src=(c.dark&&!o.fixed&&c.dm)?c.dm:c.m;
+  if(!o.video) return `<img src="media/${src}.jpg" alt="" loading="lazy">`;
+  return `<video src="media/${src}.mp4" poster="media/${src}.jpg" muted loop playsinline preload="${o.autoplay===false?'metadata':'auto'}" ${o.autoplay===false?'':'autoplay'}></video>`;
+}
 function frame(c,o={}){
-  const cls=['frame',o.cls||'',c.dark&&!o.fixed&&!o.bright?'is-dark':'',o.bright?'is-bright':''].join(' ');
-  return `<div class="${cls}" ${o.attr||''}><div class="frame-img" style="background:${c.g}"><span>${c.e}</span></div>
+  const cls=['frame',o.cls||'',c.dark&&!c.m&&!o.fixed&&!o.bright?'is-dark':'',o.bright?'is-bright':''].join(' ');
+  const img=c.m?`<div class="frame-img ${o.contain?'contain':''}">${media(c,o)}</div>`:`<div class="frame-img" style="background:${c.g}"><span>${c.e}</span></div>`;
+  return `<div class="${cls}" ${o.attr||''}>${img}
     ${o.label===false||!c.t?'':`<div class="frame-label">${c.t}</div>`}
     ${o.dur===false||!c.d?'':`<div class="frame-dur">${c.d}</div>`}
     ${o.num?`<div class="frame-num">${o.num}</div>`:''}
@@ -538,7 +553,7 @@ function cardFrame(card,o={}){
 }
 function aiFrame(o={}){
   const v=o.v??S.aiVariant;
-  return `<div class="frame ai-frame ${v?'v1':''} ${o.cls||''}"><div class="frame-img"><span>${v?'🕰️':'♨️'}</span></div>
+  return `<div class="frame ai-frame ${v?'v1':''} ${o.cls||''}"><div class="frame-img"><span>${v?'🕰️':'🌙'}</span></div>
     <div class="frame-badge b-purple">AI 生成 · 仅作衔接</div></div>`;
 }
 const topBar=(title,o={})=>`<div class="topbar">
@@ -588,7 +603,7 @@ SCREENS.home=()=>({html:`
 
 SCREENS.album=()=>{
   const d=D(), ids=Object.keys(d.clips);
-  const cells=ids.map((id,i)=>frame(d.clips[id],{num:i+1,label:false})).join('')+d.extra.map(c=>frame({...c,d:'0:0'+(3+Math.floor(Math.random()*6))},{cls:'unsel',label:false})).join('');
+  const cells=ids.map((id,i)=>frame(d.clips[id],{num:i+1,label:false})).join('')+d.extra.map(c=>frame({...c,d:'0:0'+(3+Math.floor(Math.random()*6))},{cls:'unsel',label:false,dur:false})).join('');
   return {html:`${topBar(S.entry==='tool'?'选择要检查的素材':'选择素材')}
     <div style="display:flex;gap:18px;padding:0 16px 10px;font-size:14px"><b>视频</b><span class="muted">照片</span><span class="muted">全部</span></div>
     <div class="body" style="padding:0 2px"><div class="grid3">${cells}</div></div>
@@ -685,7 +700,7 @@ SCREENS.error=()=>({html:`${topBar('镜头体检',{onBack:"goHome()"})}
   </div>`});
 
 SCREENS.pickTemplate=()=>{
-  const opts=S.type==='tutorial'?[['🧀','巴斯克芝士蛋糕','62%'],['🍰','重芝士蛋糕','48%'],['🍮','焦糖布丁','21%']]:[['📷','周末一日 vlog','58%'],['✈️','旅行 vlog','33%']];
+  const opts=S.type==='tutorial'?[['🍫','麻薯巴斯克蛋糕','62%'],['🧀','巴斯克芝士蛋糕','48%'],['🍡','巧克力麻薯','21%']]:[['📷','周末一日 vlog','58%'],['✈️','旅行 vlog','33%']];
   return {html:`${topBar('镜头体检',{onBack:"goHome()"})}
   <div class="body">
     <div class="h1">没太认出来，<br>你在做的是哪一个？</div>
@@ -801,7 +816,9 @@ SCREENS.found=({id})=>{
   return {html:`${topBar('从原素材找回')}
   <div class="body">
     <div class="muted" style="font-size:13px;line-height:1.6">在 <b style="color:var(--text)">第 ${s.found.clip} 段「${c.t}」</b> 的结尾找到了这一步：</div>
-    <div style="width:56%;margin:14px auto 0">${frame(c,{cls:'big',extra:'<div class="spot"></div>'})}</div>
+    <div style="width:56%;margin:14px auto 0">${frame(c,{cls:'big',video:true,extra:'<div class="spot"></div>'})}</div>
+    <div class="muted small" style="margin:14px 0 6px">截出来的画面：</div>
+    <div class="frame" style="aspect-ratio:16/7.4;width:100%">${media({m:'found'},{video:true})}<div class="frame-badge b-green">原素材找回</div></div>
     <div class="trim"><div class="sel"></div></div>
     <div class="trimlbl"><span>0:00</span><span style="color:var(--accent)">${s.found.range}</span><span>${c.d}</span></div>
     <div class="explain" style="margin-top:14px">会把框选区域截出来、放大，单独作为「${esc(s.name)}」一步。用的是你真实拍到的画面。</div>
@@ -815,23 +832,23 @@ SCREENS.ai=({id})=>({html:`${topBar('AI 过渡空镜')}
     <div style="text-align:center;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="S.aiVariant=1-S.aiVariant;$('#aiprev').innerHTML=aiFrame({cls:'big'})">↻ 换一个</button></div>
     <div class="h2">使用规则</div>
     <div class="card" style="font-size:13px;line-height:1.8;color:var(--sub)">
-      ✓ 只生成 2 秒左右的空镜，用来衔接「放入烤箱」和「出炉」<br>
+      ✓ 只生成 2 秒左右的空镜，表示“一晚过去”，衔接「出炉」和「淋面」<br>
       ✓ 画面角落固定标注「AI 生成」<br>
       ✕ 不生成任何操作步骤和食材状态
     </div>
-    <div class="explain" style="margin-top:10px">只放空镜，观众不知道温度和时间的问题还在。可以再加一张参数卡片。</div>
+    <div class="explain" style="margin-top:10px">只放空镜，观众还是不知道要冷藏多久。可以改用提示卡片。</div>
   </div>
-  <div class="bottombar"><button class="btn btn-ghost" onclick="go('card',{id:'${id}'})">改用参数卡片</button><button class="btn btn-primary" onclick="resolve('${id}','ai','已加入 AI 过渡（已标注）')">使用</button></div>`});
+  <div class="bottombar"><button class="btn btn-ghost" onclick="go('card',{id:'${id}'})">改用提示卡片</button><button class="btn btn-primary" onclick="resolve('${id}','ai','已加入 AI 过渡（已标注）')">使用</button></div>`});
 
 SCREENS.brighten=({id})=>{
-  const c=D().clips[10];
+  const c=D().clips[13];
   return {html:`${topBar('一键提亮')}
   <div class="body">
     <div style="display:flex;gap:12px;margin-top:6px">
       <div style="flex:1;text-align:center">${frame(c,{label:false})}<div class="muted small" style="margin-top:6px">原画面</div></div>
       <div style="flex:1;text-align:center">${frame(c,{label:false,bright:true})}<div class="muted small" style="margin-top:6px">提亮后</div></div>
     </div>
-    <div class="explain" style="margin-top:16px">提亮能看清轮廓，但暗部噪点明显、焦糖色发灰。<b>巴斯克最重要的就是表面颜色</b>，如果蛋糕还在，补拍效果会好很多。</div>
+    <div class="explain" style="margin-top:16px">提亮能看清轮廓，但暗部噪点明显、颜色发灰。<b>切面是整条视频的高光</b>，如果蛋糕还在，补拍效果会好很多。</div>
   </div>
   <div class="bottombar"><button class="btn btn-ghost" onclick="S.tries=0;go('reshoot',{id:'${id}'},{replace:true})">改为补拍</button><button class="btn btn-primary" onclick="resolve('${id}','brighten','已提亮')">仍然使用</button></div>`};
 };
@@ -842,12 +859,12 @@ SCREENS.reshoot=({id})=>{
   const lit=S.tries>0;
   return {html:`<div class="vf">
     <div class="vf-view" id="vfview">
-      <div class="scene" id="scene" style="background:${c.g};filter:brightness(${lit?1:.42})"><span>${c.e}</span></div>
-      <div class="ghost"><em>对齐原镜头的位置</em><span>${c.e}</span></div>
+      <div class="scene" id="scene" style="${c.m?'':`background:${c.g};`}filter:brightness(${lit?1:.45})">${c.m?media(c,{video:true,fixed:true}):`<span>${c.e}</span>`}</div>
+      <div class="ghost"><em>对齐原镜头的位置</em>${c.m?media(c,{}):`<span>${c.e}</span>`}</div>
       <div class="vf-top"><button class="icon" style="width:32px;height:32px;font-size:18px" onclick="back()">✕</button><div class="t">补拍：${esc(s.name)}</div>
         <button class="switch ${S.realCam?'on':''}" onclick="toggleCam(this)"><i></i>真实摄像头</button></div>
       <div class="meter"><div class="track"><div class="goal"></div><div class="fill" id="mfill" style="height:${lit?78:45}%;background:${lit?'var(--green)':'var(--amber)'}"></div></div>亮度</div>
-      <div class="vf-hints" id="hints">${lit?'<span>☀️ 光线可以了</span><span>📍 对齐虚线框</span>':'<span>📍 对齐虚线框</span><span>☀️ 太暗，靠近窗边</span><span>🔍 拍到表面的焦糖色</span>'}</div>
+      <div class="vf-hints" id="hints">${lit?'<span>☀️ 光线可以了</span><span>📍 对齐虚线框</span>':'<span>📍 对齐虚线框</span><span>☀️ 太暗，靠近窗边</span><span>🔍 拍清切面的三层</span>'}</div>
       <div class="flash" id="flash"></div>
     </div>
     <div class="vf-bottom"><div class="vf-side">${frame(c,{label:false,dur:false})}<div style="margin-top:4px">原镜头</div></div>
@@ -882,7 +899,7 @@ function shoot(id){
       } else {
         sheet(`<div style="font-weight:700;font-size:17px">补拍合格 ✓</div>
           <div class="check-li"><span style="color:var(--green)">✓</span> 机位和原镜头一致，剪进去不会跳</div>
-          <div class="check-li"><span style="color:var(--green)">✓</span> 亮度 79%，焦糖色表面清楚</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 亮度 79%，切面三层清楚</div>
           <div class="check-li"><span style="color:var(--green)">✓</span> 主体在画面中央</div>
           <div class="btns"><button class="btn btn-primary" onclick="closeSheet();resolve('${id}','reshoot','补拍已替换原镜头 ✓')">替换原镜头</button></div>`);
       }
@@ -943,12 +960,12 @@ SCREENS.generating=()=>({html:`${topBar('生成成片',{back:false})}
 
 function buildSeq(mode){
   const d=D(), seq=[];
-  const clipSeg=(id,o={})=>({html:frame(d.clips[id],{label:false,dur:false,...o}),cap:o.cap||d.clips[id].t,badge:o.badge});
+  const clipSeg=(id,o={})=>({html:frame(d.clips[id],{label:false,dur:false,video:true,autoplay:false,...o}),cap:o.cap||d.clips[id].t,badge:o.badge,dur:d.clips[id].m?2600:1800});
   steps().forEach(s=>{
     const r=mode==='after'?S.res[s.id]:null;
     const name=S.type==='tutorial'?s.name:null;
     if(r==='confirmed'){seq.push(clipSeg(S.confirmedClip[s.id],{cap:name||d.clips[S.confirmedClip[s.id]].t}));return;}
-    if(r==='found'){const c=d.clips[s.found.clip];seq.push({html:frame(c,{label:false,dur:false,badge:'原素材找回',bc:'b-green'}),cap:s.name});}
+    if(r==='found'){const c=d.clips[s.found.clip];seq.push(c.m?{html:frame({m:'found'},{label:false,dur:false,video:true,autoplay:false,contain:true,badge:'原素材找回',bc:'b-green'}),cap:'210°C · 25 分钟',dur:2600}:{html:frame(c,{label:false,dur:false,badge:'原素材找回',bc:'b-green'}),cap:s.name});}
     if(r==='reshoot'&&!s.clips.length){seq.push(clipSeg(s.rclip,{cap:s.name,badge:'补拍',bc:'b-green',fixed:true}));return;}
     if(r==='voice'&&!s.clips.length){seq.push(clipSeg(s.voiceClip,{cap:'🎙 '+(S.voices[s.id]||s.voice),badge:'补口播',bc:'b-green'}));return;}
     s.clips.forEach((id,i)=>{
@@ -958,8 +975,8 @@ function buildSeq(mode){
       if(r==='voice'&&i===0){o.cap='🎙 '+(S.voices[s.id]||s.voice);o.badge='补口播';o.bc='b-green';}
       seq.push(clipSeg(id,o));
     });
-    if(r==='card'){const c=S.cards[s.id]||s.card;seq.push({html:cardFrame(c,{badge:'示意卡片'}),cap:''});}
-    if(r==='ai'){seq.push({html:aiFrame({}),cap:'烤箱里…'});}
+    if(r==='card'){const c=S.cards[s.id]||s.card;seq.push({html:cardFrame(c,{badge:'示意卡片'}),cap:'',dur:2400});}
+    if(r==='ai'){seq.push({html:aiFrame({}),cap:'冷藏一晚…',dur:1800});}
   });
   return seq;
 }
@@ -975,7 +992,7 @@ SCREENS.preview=()=>{
       <div><b>${cnt('reshoot')+cnt('found')+cnt('confirmed')}</b>真实画面补回</div>
       <div><b>${cnt('card')}</b>示意卡片</div>
       <div><b>${cnt('ai')}</b>AI 过渡</div></div>`
-    :`<div class="explain" style="margin-top:14px">修复前：${tut?'缺少软化和过筛，烘烤后直接跳到出炉，出炉画面偏暗。':'开场是一段空镜，全片没有你自己，结尾停在夜景上。'}</div>`}
+    :`<div class="explain" style="margin-top:14px">修复前：${tut?'烤箱温度一闪而过；出炉后直接淋面，没交代冷藏；没拍蒸麻薯；成品切面偏暗。':'开场是一段空镜，全片没有你自己，结尾停在夜景上。'}</div>`}
     <div class="after-acts">
       <button onclick="go('nextlist')"><span>📝</span>下次拍摄清单</button>
       <button onclick="toast('进入小影编辑器继续精修（Demo 未展开）')"><span>✂️</span>去编辑器精修</button>
@@ -986,22 +1003,23 @@ SCREENS.preview=()=>{
 };
 let playIdx=0,playTimer=null,paused=false;
 function startPlayer(){
-  const seq=buildSeq(S.player), el=$('#player'), DUR=1700;
-  el.innerHTML=`<div class="prog">${seq.map(()=>'<i><b></b></i>').join('')}</div>`+seq.map(s=>`<div class="seg">${s.html}${s.cap?`<div class="cap">${esc(s.cap)}</div>`:''}</div>`).join('')+'<div class="paused">▶</div>';
-  el.style.setProperty('--dur',DUR+'ms');
+  const seq=buildSeq(S.player), el=$('#player'), dur=i=>seq[i].dur||1800;
+  el.innerHTML=`<div class="prog">${seq.map((s,i)=>`<i style="--dur:${dur(i)}ms"><b></b></i>`).join('')}</div>`+seq.map(s=>`<div class="seg">${s.html}${s.cap?`<div class="cap">${esc(s.cap)}</div>`:''}</div>`).join('')+'<div class="paused">▶</div>';
   playIdx=0;paused=false;
   const show=()=>{
     const segs=el.querySelectorAll('.seg'),bars=el.querySelectorAll('.prog i');
     if(!segs.length)return;
-    segs.forEach((s,i)=>s.classList.toggle('on',i===playIdx));
+    segs.forEach((s,i)=>{s.classList.toggle('on',i===playIdx);const v=s.querySelector('video');if(!v)return;
+      if(i===playIdx){try{v.currentTime=0;}catch(e){}const p=v.play();p&&p.catch(()=>{});}else v.pause();});
     bars.forEach((b,i)=>{b.className=i<playIdx?'past':i===playIdx?'cur':'';});
     const cur=bars[playIdx];if(cur){const bb=cur.firstElementChild;bb.style.animation='none';void bb.offsetWidth;bb.style.animation='';}
     const segOn=segs[playIdx];const fi=segOn.querySelector('.frame-img');if(fi){fi.style.animation='none';void fi.offsetWidth;fi.style.animation='';}
   };
-  const tick=()=>{if(!$('#player'))return;if(!paused){playIdx=(playIdx+1)%seq.length;show();}playTimer=later(tick,DUR);};
-  show();playTimer=later(tick,DUR);
+  const tick=()=>{if(!$('#player'))return;if(!paused){playIdx=(playIdx+1)%seq.length;show();}playTimer=later(tick,dur(playIdx));};
+  show();playTimer=later(tick,dur(0));
 }
-function togglePlay(){paused=!paused;$('#player').classList.toggle('is-paused',paused);}
+function togglePlay(){paused=!paused;const p=$('#player');p.classList.toggle('is-paused',paused);
+  const v=p.querySelector('.seg.on video');if(v){if(paused)v.pause();else{const r=v.play();r&&r.catch(()=>{});}}}
 function exportFilm(){
   sheet(`<div style="font-weight:700;font-size:17px" id="exT">正在导出 1080P…</div><div class="bar" style="margin-top:16px"><i id="exB"></i></div><div class="btns" id="exBtns"></div>`);
   let p=0;const step=()=>{p+=12+Math.random()*14;if(p>=100)p=100;const b=$('#exB');if(!b)return;b.style.width=p+'%';
@@ -1016,7 +1034,7 @@ SCREENS.publish=()=>{
   return {html:`${topBar('发布到小红书')}
   <div class="body">
     <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="width:84px">${S.type==='tutorial'?cardFrame({title:'7 步做巴斯克',body:'新手也不翻车'},{style:1}):frame(D().clips[2],{label:false,dur:false})}</div>
+      <div style="width:84px">${S.type==='tutorial'?frame(D().clips[13],{label:false,dur:false,fixed:true}):frame(D().clips[2],{label:false,dur:false})}</div>
       <div style="flex:1"><div class="muted small">AI 生成的封面和文案</div><div style="font-weight:700;font-size:15px;line-height:1.45;margin-top:6px">${esc(cap.title)}</div></div>
     </div>
     <div class="h2">正文</div>
@@ -1061,7 +1079,7 @@ function renderConsole(){const c=$('#console');if(c)c.innerHTML=consoleHTML();}
 function setScenario(s){
   S.scenario=s;
   if(['fail','slow','unknown'].includes(s)){S.stack=[{screen:'home',params:{}}];S.screen='setup';S.params={};clearTimers();closeSheet();render();toast('已切换场景，点「开始检查」查看');}
-  else if(s==='wrong'){S.type='tutorial';delete S.res.s5;S.stack=[{screen:'home',params:{}}];S.screen='';go('report',{},{replace:true});toast('AI 多报了「铺油纸」，试试「这步我拍了」');}
+  else if(s==='wrong'){S.type='tutorial';delete S.res[DATA.tutorial.wrong.id];S.stack=[{screen:'home',params:{}}];S.screen='';go('report',{},{replace:true});toast('AI 多报了「震气泡」，试试「这步我拍了」');}
   else renderConsole();
   closeDrawer();
 }
@@ -1073,9 +1091,9 @@ function jump(t){
   if(t==='setup'){S.screen='';go('setup',{},{replace:true});return;}
   S.stack.push({screen:'setup',params:{}});
   if(t==='report'){S.screen='';go('report',{},{replace:true});return;}
-  if(t==='reshoot'){S.screen='';go('report',{},{replace:true});S.tries=0;go('reshoot',{id:'s7'});return;}
+  if(t==='reshoot'){S.screen='';go('report',{},{replace:true});S.tries=0;go('reshoot',{id:'s10'});return;}
   if(t==='preview'){
-    Object.assign(S.res,{s2:'card',s4:'found',s6:'card',s7:'reshoot'});S.player='after';
+    Object.assign(S.res,{s3:'found',s4:'card',s7:'card',s10:'reshoot'});S.player='after';
     S.screen='';go('report',{},{replace:true});go('preview');return;}
 }
 function openDrawer(){$('#drawer-panel').innerHTML=`<div class="side console">${consoleHTML()}</div><div class="side" style="margin-top:18px">${$('#intro').innerHTML}</div>`;$('#drawer').classList.add('open');}
