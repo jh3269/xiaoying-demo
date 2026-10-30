@@ -1,0 +1,1087 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>小影 · 镜头体检 Demo</title>
+<style>
+:root{
+  --bg:#0F0F13; --surface:#1A1A21; --surface2:#25252E; --line:#30303B;
+  --text:#F4F4F6; --sub:#9C9CA8; --faint:#6B6B78;
+  --accent:#FF5B45; --accent2:#FF8A3D;
+  --green:#3DD68C; --amber:#FFB547; --red:#FF5C6C; --blue:#5B9DFF; --purple:#B07CFF;
+  --page:#ECEAE5; --ink:#1E1E24; --ink-sub:#5E5E68;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;background:var(--page);color:var(--ink);overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+
+/* ---------- 外层舞台 ---------- */
+.stage{height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;gap:40px;padding:20px}
+.side{width:280px;max-height:calc(100dvh - 40px);overflow-y:auto;font-size:13px;line-height:1.7;color:var(--ink-sub)}
+.side h1{font-size:22px;color:var(--ink);margin-bottom:4px}
+.side h2{font-size:13px;color:var(--ink);margin:18px 0 6px;letter-spacing:.5px}
+.side .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:#FFE1DB;color:#C23A26;margin-bottom:12px}
+.side ol{padding-left:18px}
+.side li{margin:3px 0}
+.side .note{margin-top:16px;padding:10px 12px;border-radius:10px;background:#fff;font-size:12px}
+.console .group{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px}
+.console label{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;color:var(--ink)}
+.console label small{color:var(--ink-sub);margin-left:auto;font-size:11px}
+.console .jump{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.console .jump button{padding:7px 4px;border-radius:8px;background:#F2F0EC;font-size:12px;color:var(--ink)}
+.console .jump button:hover{background:#E6E3DD}
+.console .reset{width:100%;padding:9px;border-radius:10px;background:var(--ink);color:#fff;font-size:13px}
+
+.phone{position:relative;height:min(844px,calc(100dvh - 40px));aspect-ratio:390/844;border-radius:52px;background:#000;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.25),0 0 0 2px #2a2a2a inset;flex-shrink:0}
+.screen{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);color:var(--text);font-size:14px}
+.statusbar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px;font-weight:600;z-index:5}
+.statusbar .island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000}
+#app{position:absolute;inset:44px 0 0 0;display:flex;flex-direction:column}
+
+.fab{display:none}
+@media (max-width:1100px){ .side.intro{display:none} }
+@media (max-width:760px){
+  .stage{padding:0;gap:0}
+  .side.console{display:none}
+  .phone{height:100%;width:100%;aspect-ratio:auto;border-radius:0;padding:0;box-shadow:none}
+  .screen{border-radius:0}
+  .statusbar{display:none}
+  #app{top:env(safe-area-inset-top)}
+  .fab{display:flex;position:fixed;left:8px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:50;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);color:rgba(255,255,255,.6);align-items:center;justify-content:center;font-size:13px}
+  .drawer.open{display:block}
+}
+.drawer{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45)}
+.drawer .panel{position:absolute;left:0;right:0;bottom:0;max-height:80dvh;overflow-y:auto;background:var(--page);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.drawer .side{width:auto;max-height:none}
+
+/* ---------- App 通用 ---------- */
+.page{flex:1;display:flex;flex-direction:column;min-height:0;animation:pageIn .22s ease}
+@keyframes pageIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.topbar{height:48px;display:flex;align-items:center;padding:0 6px;gap:2px;flex-shrink:0}
+.topbar .title{flex:1;text-align:center;font-weight:600;font-size:16px}
+.topbar .icon{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;font-size:20px}
+.topbar .link{font-size:13px;color:var(--sub);padding:0 10px;white-space:nowrap}
+.body{flex:1;overflow-y:auto;padding:4px 16px 24px;-webkit-overflow-scrolling:touch}
+.body::-webkit-scrollbar{display:none}
+.bottombar{flex-shrink:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg);display:flex;gap:10px}
+.btn{height:48px;border-radius:14px;font-weight:600;font-size:15px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--text)}
+.btn-sm{height:34px;border-radius:10px;font-size:13px;padding:0 12px;width:auto}
+.btn[disabled]{opacity:.4}
+.h1{font-size:22px;font-weight:700;line-height:1.35}
+.h2{font-size:15px;font-weight:600;margin:20px 0 10px}
+.muted{color:var(--sub)}
+.small{font-size:12px}
+.card{background:var(--surface);border-radius:16px;padding:14px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.p-green{background:rgba(61,214,140,.15);color:var(--green)}
+.p-amber{background:rgba(255,181,71,.15);color:var(--amber)}
+.p-red{background:rgba(255,92,108,.15);color:var(--red)}
+.p-blue{background:rgba(91,157,255,.15);color:var(--blue)}
+.p-purple{background:rgba(176,124,255,.15);color:var(--purple)}
+.p-gray{background:var(--surface2);color:var(--sub)}
+.p-accent{background:var(--accent);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 14px;border-radius:12px;background:var(--surface2);font-size:14px;border:1.5px solid transparent}
+.chip.on{border-color:var(--accent);background:rgba(255,91,69,.12);color:#FF8B7A}
+.input{width:100%;height:46px;border-radius:12px;background:var(--surface2);border:1.5px solid transparent;padding:0 14px;outline:none}
+.input:focus{border-color:var(--accent)}
+.spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--surface2);border-top-color:var(--accent);animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- 画面（占位素材） ---------- */
+.frame{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:9/16;background:#222;flex-shrink:0}
+.frame-img{position:absolute;inset:0;display:grid;place-items:center;transition:filter .5s}
+.frame-img span{font-size:30px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.15))}
+.frame.big .frame-img span{font-size:84px}
+.frame.mini{border-radius:6px;width:30px}
+.frame.mini .frame-img span{font-size:14px}
+.frame-label{position:absolute;left:6px;right:6px;bottom:6px;font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame.big .frame-label{font-size:13px;left:12px;bottom:12px}
+.frame-dur{position:absolute;right:5px;top:5px;font-size:9px;padding:1px 5px;border-radius:5px;background:rgba(0,0,0,.45);color:#fff}
+.frame-num{position:absolute;left:5px;top:5px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;display:grid;place-items:center;font-weight:700}
+.frame-badge{position:absolute;left:10px;top:10px;font-size:11px;padding:3px 8px;border-radius:7px;background:rgba(0,0,0,.55);color:#fff;font-weight:600;backdrop-filter:blur(4px)}
+.frame-badge.b-green{background:rgba(32,150,92,.85)}
+.frame-badge.b-blue{background:rgba(52,110,220,.85)}
+.frame-badge.b-purple{background:rgba(125,78,210,.88)}
+.frame-badge.b-amber{background:rgba(200,130,20,.88)}
+.frame.is-dark .frame-img{filter:brightness(.3) saturate(.55) blur(.4px)}
+.frame.is-bright .frame-img{filter:brightness(.95) contrast(.75) saturate(.7)}
+.frame.is-bright .frame-img::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.22) 1px,transparent 1.2px),radial-gradient(rgba(0,0,0,.25) 1px,transparent 1.2px);background-size:4px 4px,5px 5px;background-position:0 0,2px 3px;mix-blend-mode:overlay}
+.frame.unsel{opacity:.55}
+.frame .tagfly{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;font-size:10px;padding:2px 6px;border-radius:6px;background:var(--accent);color:#fff;white-space:nowrap;transition:all .35s}
+.frame.tagged .tagfly{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.frame.scan::before{content:"";position:absolute;left:0;right:0;height:30%;top:-30%;background:linear-gradient(transparent,rgba(255,91,69,.45),transparent);animation:scan 1s linear infinite;z-index:2}
+@keyframes scan{to{top:100%}}
+
+.card-frame{display:flex;flex-direction:column;justify-content:center;padding:14%;text-align:left}
+.card-frame .cf-tag{position:absolute;right:8px;top:8px;font-size:9px;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,.18)}
+.card-frame .cf-title{font-weight:800;line-height:1.3;font-size:12px}
+.card-frame .cf-body{margin-top:8px;line-height:1.6;font-size:9px;white-space:pre-line;opacity:.85}
+.frame.big.card-frame .cf-title{font-size:22px}
+.frame.big.card-frame .cf-body{font-size:14px;margin-top:14px}
+.frame.big.card-frame .cf-tag{font-size:11px;right:12px;top:12px;padding:2px 8px}
+.cs-0{background:linear-gradient(160deg,#FFF6E8,#FBE3C2);color:#5A3A12}
+.cs-1{background:linear-gradient(160deg,#20232B,#2E3340);color:#F3E7D3}
+.cs-2{background:linear-gradient(160deg,#E7F4EC,#C9E8D5);color:#1F4A33}
+.ai-frame .frame-img{background:radial-gradient(circle at 50% 58%,#FFB25C 0,#C2551E 28%,#3A1608 70%)}
+.ai-frame .frame-img span{animation:glow 1.6s ease-in-out infinite alternate}
+@keyframes glow{from{filter:drop-shadow(0 0 4px #ffb25c)}to{filter:drop-shadow(0 0 26px #ffcf8a)}}
+.ai-frame.v1 .frame-img{background:radial-gradient(circle at 50% 50%,#3B4A6B 0,#141A2A 75%)}
+
+/* ---------- 首页 ---------- */
+.home-head{display:flex;align-items:center;padding:6px 16px 10px}
+.logo{font-size:22px;font-weight:800;letter-spacing:1px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.avatar{margin-left:auto;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FFC7B8,#FF8A6B);display:grid;place-items:center;font-size:15px}
+.hero{display:flex;align-items:center;gap:14px;height:120px;border-radius:20px;padding:0 20px;background:linear-gradient(120deg,#FF5B45,#FF8A3D 60%,#FFB45E);color:#fff;width:100%;text-align:left}
+.hero .plus{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.25);display:grid;place-items:center;font-size:30px;font-weight:300}
+.hero b{font-size:20px;display:block}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;position:relative}
+.tool .ic{width:52px;height:52px;border-radius:16px;background:var(--surface);display:grid;place-items:center;font-size:22px}
+.tool.hl .ic{background:linear-gradient(135deg,rgba(255,91,69,.25),rgba(255,138,61,.25));box-shadow:0 0 0 1.5px rgba(255,120,80,.6) inset}
+.tool .new{position:absolute;top:-4px;right:2px;font-size:9px;padding:1px 5px;border-radius:6px;background:var(--accent);color:#fff;font-weight:700}
+.drafts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.draft{background:var(--surface);border-radius:14px;overflow:hidden}
+.draft .frame{aspect-ratio:4/3;border-radius:0}
+.draft div.meta{padding:8px 10px;font-size:12px}
+.tabbar{display:flex;border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom));flex-shrink:0}
+.tabbar div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--faint)}
+.tabbar div.on{color:var(--text)}
+.tabbar span{font-size:20px}
+
+/* ---------- 相册 ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.grid3 .frame{border-radius:4px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.strip .frame{width:44px}
+.strip::-webkit-scrollbar{display:none}
+
+/* ---------- Sheet / Toast ---------- */
+#sheet-root{position:absolute;inset:0;z-index:20;pointer-events:none}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);pointer-events:auto;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));pointer-events:auto;animation:up .25s ease}
+@keyframes up{from{transform:translateY(100%)}}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sheet .btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+#toast{position:absolute;left:50%;bottom:110px;transform:translateX(-50%) translateY(10px);background:rgba(40,40,48,.96);color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:all .25s;z-index:30;pointer-events:none;max-width:82%;text-align:center;line-height:1.5}
+#toast.show{opacity:1;transform:translateX(-50%)}
+
+/* ---------- 分析中 ---------- */
+.stage-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);color:var(--faint)}
+.stage-row.active{color:var(--text)}
+.stage-row.done{color:var(--sub)}
+.stage-row .st-ic{width:18px;height:18px;display:grid;place-items:center;font-size:13px}
+.stage-row.done .st-ic{color:var(--green)}
+.stage-row.failed .st-ic{color:var(--red)}
+.bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}
+
+/* ---------- 报告 ---------- */
+.score{display:flex;align-items:center;gap:16px}
+.ring{width:84px;height:84px;position:relative;flex-shrink:0}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:22px;line-height:1}
+.ring .num small{font-size:10px;font-weight:500;color:var(--sub);margin-top:4px}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--sub);margin-top:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.tl{position:relative;margin-top:6px}
+.step{position:relative;padding:0 0 18px 26px}
+.step::before{content:"";position:absolute;left:6px;top:16px;bottom:-2px;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .dot{position:absolute;left:0;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--bg)}
+.step .row{display:flex;align-items:center;gap:8px}
+.step .name{font-weight:600;font-size:15px}
+.step .thumbs{display:flex;gap:4px;margin-top:8px}
+.issue{margin-top:10px;background:var(--surface);border-radius:14px;padding:12px;border:1px solid var(--line)}
+.issue .q{font-size:14px;line-height:1.5}
+.issue .q b{color:#FFB3A8;font-weight:600}
+.issue .why{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
+.issue .acts{display:flex;gap:8px;margin-top:10px;align-items:center}
+.resolved{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:12px}
+.resolved .change{margin-left:auto;color:var(--sub);font-size:12px;text-decoration:underline}
+
+/* ---------- 补救方案 ---------- */
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border-radius:16px;padding:14px;margin-bottom:10px;border:1.5px solid transparent}
+.opt.reco{border-color:rgba(255,120,80,.55)}
+.opt .oi{width:40px;height:40px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;font-size:19px;flex-shrink:0}
+.opt .ot{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.opt .od{font-size:12px;color:var(--sub);margin-top:4px;line-height:1.55}
+.opt .oc{margin-left:auto;font-size:11px;color:var(--sub);white-space:nowrap;padding-top:3px}
+.opt.disabled{opacity:.5;cursor:default;border:1.5px dashed var(--line);background:transparent}
+.rank{font-size:11px;color:var(--faint);margin:2px 0 8px}
+.explain{font-size:12px;color:var(--sub);line-height:1.6;background:var(--surface);border-radius:12px;padding:10px 12px;margin-top:6px}
+
+/* ---------- 补拍取景 ---------- */
+.vf{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;z-index:2}
+.vf-view{position:relative;flex:1;overflow:hidden}
+.vf-view .scene{position:absolute;inset:-4%;display:grid;place-items:center;transition:filter .8s;animation:drift 4s ease-in-out infinite alternate}
+.vf-view .scene span{font-size:120px}
+@keyframes drift{from{transform:translate(-4px,2px) rotate(-.4deg)}to{transform:translate(4px,-3px) rotate(.4deg)}}
+.vf-view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ghost{position:absolute;left:14%;right:14%;top:16%;bottom:24%;border:2px dashed rgba(255,255,255,.75);border-radius:18px;display:grid;place-items:center;pointer-events:none}
+.ghost span{font-size:100px;opacity:.22}
+.ghost em{position:absolute;top:-26px;left:0;font-style:normal;font-size:12px;color:#fff;background:rgba(0,0,0,.4);padding:2px 8px;border-radius:6px}
+.vf-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:10px 12px;gap:8px;z-index:3;background:linear-gradient(rgba(0,0,0,.5),transparent)}
+.vf-top .t{flex:1;font-weight:600}
+.switch{display:flex;align-items:center;gap:6px;font-size:11px;background:rgba(0,0,0,.4);padding:5px 8px;border-radius:99px}
+.switch i{width:28px;height:16px;border-radius:8px;background:#555;position:relative;transition:.2s}
+.switch i::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on i{background:var(--green)}
+.switch.on i::after{left:14px}
+.meter{position:absolute;right:12px;top:70px;bottom:40%;width:26px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;z-index:3}
+.meter .track{flex:1;width:6px;border-radius:3px;background:rgba(255,255,255,.2);position:relative}
+.meter .fill{position:absolute;left:0;right:0;bottom:0;border-radius:3px;background:var(--amber);transition:height .8s,background .8s}
+.meter .goal{position:absolute;left:-5px;right:-5px;height:2px;background:#fff;bottom:65%}
+.vf-hints{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+.vf-hints span{font-size:12px;background:rgba(0,0,0,.5);padding:5px 10px;border-radius:99px;backdrop-filter:blur(6px)}
+.vf-bottom{height:120px;display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom)}
+.shutter{width:70px;height:70px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}
+.shutter i{width:56px;height:56px;border-radius:50%;background:#fff;transition:transform .1s}
+.shutter:active i{transform:scale(.88)}
+.vf-side{width:52px;font-size:11px;color:#ccc;text-align:center}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.flash.go{animation:flash .35s}
+@keyframes flash{30%{opacity:.85}}
+.check-li{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}
+
+/* ---------- 成片预览 ---------- */
+.player{position:relative;width:62%;margin:0 auto;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#000}
+.player .seg{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.player .seg.on{opacity:1}
+.player .seg .frame{position:absolute;inset:0;border-radius:0;aspect-ratio:auto}
+.player .seg.on .frame:not(.card-frame) .frame-img{animation:kb 2.2s ease-out forwards}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.09)}}
+.player .cap{position:absolute;left:8px;right:8px;bottom:22px;text-align:center;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);line-height:1.4}
+.player .prog{position:absolute;left:6px;right:6px;top:6px;display:flex;gap:2px;z-index:3}
+.player .prog i{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.player .prog i b{display:block;height:100%;width:0;background:#fff}
+.player .prog i.past b{width:100%}
+.player .prog i.cur b{animation:pg var(--dur) linear forwards}
+@keyframes pg{to{width:100%}}
+.player .paused{position:absolute;inset:0;display:none;place-items:center;font-size:40px;background:rgba(0,0,0,.25);z-index:4}
+.player.is-paused .paused{display:grid}
+.player.is-paused .prog i.cur b{animation-play-state:paused}
+.seg-tabs{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin:0 auto 12px;width:220px}
+.seg-tabs button{flex:1;height:32px;border-radius:9px;font-size:13px;color:var(--sub)}
+.seg-tabs button.on{background:var(--surface);color:var(--text);font-weight:600}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.statgrid div{background:var(--surface);border-radius:12px;padding:8px 4px;text-align:center;font-size:11px;color:var(--sub)}
+.statgrid b{display:block;font-size:17px;color:var(--text);margin-bottom:2px}
+.after-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.after-acts button{background:var(--surface);border-radius:14px;padding:12px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.after-acts span{font-size:20px}
+
+/* ---------- 其他 ---------- */
+.trim{position:relative;height:44px;border-radius:8px;background:repeating-linear-gradient(90deg,#3a3a46 0 22px,#30303b 22px 44px);margin-top:12px}
+.trim .sel{position:absolute;top:-2px;bottom:-2px;left:62%;right:0;border:2.5px solid var(--accent);border-radius:8px;background:rgba(255,91,69,.15)}
+.trimlbl{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:6px}
+.spot{position:absolute;right:8%;top:10%;width:42%;height:30%;border:2.5px solid var(--accent);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.45);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{border-color:#FFB3A8}}
+.swatches{display:flex;gap:10px}
+.swatches button{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
+.swatches button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--bg) inset}
+textarea.input{height:auto;padding:12px 14px;line-height:1.6;resize:none}
+.mic{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:38px;margin:0 auto;box-shadow:0 10px 30px rgba(255,91,69,.35)}
+.mic.rec{animation:recp 1s ease-in-out infinite}
+@keyframes recp{50%{box-shadow:0 0 0 16px rgba(255,91,69,.15)}}
+.wave{display:flex;gap:3px;justify-content:center;align-items:center;height:40px;margin:18px 0}
+.wave i{width:3px;border-radius:2px;background:var(--accent);height:6px}
+.wave.on i{animation:wv .9s ease-in-out infinite}
+@keyframes wv{50%{height:34px}}
+.list-li{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.list-li .ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;margin-top:1px}
+.caption-box{background:var(--surface);border-radius:14px;padding:14px;white-space:pre-line;line-height:1.75;font-size:14px}
+.empty-ic{width:72px;height:72px;border-radius:24px;background:var(--surface);display:grid;place-items:center;font-size:34px;margin:30px auto 18px}
+.tpl{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:12px;margin-bottom:10px;width:100%;text-align:left;border:1.5px solid transparent}
+.tpl:hover{border-color:var(--line)}
+.tpl .conf{margin-left:auto;font-size:12px;color:var(--sub)}
+.sel-clip{outline:2.5px solid var(--accent);outline-offset:-2.5px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="side intro" id="intro">
+    <span class="tag">小影 · AI 与内容创作 · 产品 Demo</span>
+    <h1>镜头体检</h1>
+    <p>帮第一次拍制作教程的新手，在剪辑之前由 AI 站在<b>观众</b>的角度检查“有没有讲清楚”，找出漏拍和看不清的步骤，并按成本从低到高给出补救方案：<b>原素材找回 → 补拍 → 图文卡片 → AI 过渡</b>。</p>
+    <h2>推荐演示路径</h2>
+    <ol>
+      <li>首页点「开始剪辑」，选好素材后点下一步</li>
+      <li>接受 AI 提示，开始体检</li>
+      <li>在体检报告里逐个处理 4 处问题</li>
+      <li>试试「补拍」：第一次会提示仍偏暗</li>
+      <li>试试「这步我拍了」：纠正 AI</li>
+      <li>生成成片，对比修复前 / 修复后</li>
+      <li>导出、发布，查看下次拍摄清单</li>
+    </ol>
+    <h2>异常状态</h2>
+    <p>用右侧「演示控制台」切换：分析失败、网络很慢、认不出主题、AI 误判。</p>
+    <div class="note">所有 AI 结果均为预设的模拟数据；画面为占位插画，后续替换为真实拍摄素材。</div>
+  </aside>
+
+  <div class="phone">
+    <div class="screen" id="screen">
+      <div class="statusbar"><span>9:41</span><div class="island"></div><span>📶 🔋</span></div>
+      <div id="app"></div>
+      <div id="sheet-root"></div>
+      <div id="toast"></div>
+    </div>
+  </div>
+
+  <aside class="side console" id="console"></aside>
+</div>
+<button class="fab" onclick="openDrawer()" aria-label="演示控制台">⚙︎</button>
+<div class="drawer" id="drawer" onclick="if(event.target===this)closeDrawer()"><div class="panel" id="drawer-panel"></div></div>
+
+<script>
+/* ============ 数据 ============ */
+const G = (a,b)=>`linear-gradient(160deg,${a},${b})`;
+const DATA = {
+  tutorial:{
+    topic:'巴斯克芝士蛋糕', label:'制作教程', total:'1 分 18 秒',
+    clips:{
+      1:{e:'🧀🥚🥛',t:'材料全家福',g:G('#F8E9D2','#E7C597'),d:'0:06',tag:'备料'},
+      2:{e:'⚖️',t:'称量奶油奶酪',g:G('#EDE6DA','#CDBFA8'),d:'0:05',tag:'备料'},
+      3:{e:'🥣',t:'奶酪加糖搅拌',g:G('#F3E3C8','#D9B884'),d:'0:08',tag:'搅拌'},
+      4:{e:'🥚',t:'逐个加入鸡蛋',g:G('#FFF1CF','#F2C86B'),d:'0:07',tag:'加蛋'},
+      5:{e:'🥛',t:'倒入淡奶油',g:G('#F4F1EA','#D6D0C2'),d:'0:05',tag:'加奶油'},
+      6:{e:'🌀',t:'搅拌均匀',g:G('#F2E2C4','#CFAE76'),d:'0:08',tag:'搅拌'},
+      7:{e:'📜',t:'折油纸',g:G('#F1ECE2','#C9BBA2'),d:'0:06',tag:'油纸'},
+      8:{e:'🫗',t:'面糊倒入模具',g:G('#F0DDBA','#C99B5A'),d:'0:06',tag:'入模'},
+      9:{e:'🔥',t:'放入烤箱',g:G('#3A2A20','#8A4B22'),d:'0:04',tag:'烤箱'},
+      10:{e:'🎂',t:'出炉',g:G('#7A4A26','#C98447'),d:'0:05',tag:'出炉',dark:true},
+      11:{e:'🔪🍰',t:'切开看切面',g:G('#E8C793','#9C6434'),d:'0:06',tag:'切面',dark:true},
+      12:{e:'😋',t:'试吃',g:G('#F6DFC0','#E0A86E'),d:'0:05',tag:'试吃'},
+    },
+    extra:[{e:'🐱',t:'',g:G('#C9D6E3','#8FA3B8')},{e:'☁️',t:'',g:G('#BFD9F2','#6FA4D8')},{e:'🍜',t:'',g:G('#F2D6B0','#C8874A')},{e:'📄',t:'',g:G('#ECECEC','#BDBDBD')},{e:'🌇',t:'',g:G('#F7B58A','#7A5AA8')},{e:'🧋',t:'',g:G('#E9D5BC','#A97E52')}],
+    steps:[
+      {id:'s1',name:'备料展示',clips:[1,2],status:'ok'},
+      {id:'s2',name:'奶油奶酪软化',clips:[],status:'missing',rclip:2,
+        q:'奶油奶酪要软化到什么程度？直接从冰箱拿出来行吗？',
+        why:'素材里没有出现软化后的状态。这是新手最容易失败的一步：奶酪太硬会结块。',
+        tip:'拍下奶油奶酪软化后的状态（手指按压 5 秒）',
+        opts:[
+          {k:'card',t:'插入图文卡片',d:'用一张卡片讲清楚软化标准，标注“示意”',cost:'约 30 秒',reco:'这一步已经做完了，补拍要重新准备材料'},
+          {k:'reshoot',t:'补拍',d:'如果还有奶油奶酪，拍 5 秒手指按压的状态',cost:'约 5 分钟'},
+          {k:'nogen',t:'AI 生成这一步的画面',d:'不提供：教程是要照着做的，AI 生成的“软化状态”可能是错的，会误导观众'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ],
+        card:{title:'奶油奶酪软化到什么程度？',body:'室温放置约 1 小时\n手指按下能轻松留下凹痕\n太硬会结块，太软会出油'}},
+      {id:'s3',name:'加糖、蛋、淡奶油搅拌',clips:[3,4,5,6],status:'ok'},
+      {id:'s4',name:'面糊过筛',clips:[],status:'partial',
+        q:'面糊要过筛吗？成品这么顺滑是怎么做到的？',
+        why:'过筛只在第 6 段结尾的 3 秒里、画面右上角出现，很容易在剪辑时被剪掉。',
+        tip:'过筛单独拍一个镜头，不要只在角落带过',
+        found:{clip:6,range:'0:05 – 0:08'},
+        opts:[
+          {k:'found',t:'用原素材里的片段',d:'第 6 段 0:05–0:08 拍到了过筛，单独截出来放大',cost:'0 成本',reco:'你其实拍到了，直接用真实画面最好'},
+          {k:'card',t:'插入图文卡片',d:'用文字说明过筛的作用',cost:'约 30 秒'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ],
+        card:{title:'面糊过筛一遍',body:'去掉没搅开的小颗粒\n成品口感会更顺滑'}},
+      {id:'s5',name:'铺油纸、入模',clips:[7,8],status:'ok'},
+      {id:'s6',name:'烘烤',clips:[9],status:'jump',
+        q:'烤多少度？烤多久？',
+        why:'从“放入烤箱”直接跳到了“出炉”，温度和时间都没有交代。',
+        tip:'放入烤箱时说一句温度和时间，或拍一下烤箱面板',
+        opts:[
+          {k:'card',t:'插入烘烤参数卡',d:'“220°C · 25 分钟”，接在放入烤箱之后',cost:'约 30 秒',reco:'关键信息是数字，用卡片讲最清楚'},
+          {k:'ai',t:'AI 生成过渡空镜',d:'生成 2 秒烤箱亮灯的画面做衔接，会标注“AI 生成”',cost:'约 20 秒'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ],
+        card:{title:'220°C · 25 分钟',body:'烤到表面呈深焦糖色\n轻晃模具，中心仍会微微晃动'}},
+      {id:'s7',name:'出炉 & 切面',clips:[10,11,12],status:'weak',
+        q:'表面是焦糖色还是烤焦了？切面是流心吗？看不清。',
+        why:'第 10、11 段画面偏暗。巴斯克最重要的焦糖色表面和流心切面，观众看不清。',
+        tip:'出炉后先端到窗边，再拍表面和切面',
+        opts:[
+          {k:'reshoot',t:'补拍表面和切面',d:'蛋糕还在的话，端到窗边重拍，AI 帮你对齐原来的机位',cost:'约 2 分钟',reco:'成品还在，补拍成本低、效果最好'},
+          {k:'brighten',t:'一键提亮',d:'马上就能用，但暗部会出现明显噪点',cost:'即时'},
+          {k:'skip',t:'先跳过',d:'不处理，记进「下次拍摄清单」',cost:''},
+        ]},
+    ],
+    wrong:{id:'s5',status:'missing',q:'要铺油纸吗？没看到这一步。',why:'没有识别到铺油纸的镜头。',opts:[
+      {k:'card',t:'插入图文卡片',d:'用文字说明铺油纸的做法',cost:'约 30 秒'},
+      {k:'skip',t:'先跳过',d:'不处理',cost:''}],card:{title:'模具里铺好油纸',body:'揉皱后再铺，更容易贴合\n边缘留高一些'}},
+    reshootClip:10,
+    caption:[
+      {title:'第一次做巴斯克｜7 步讲清楚，新手也不翻车🧀',body:'📝 步骤\n1. 备料：奶油奶酪 250g、糖 60g、鸡蛋 2 个、淡奶油 120g\n2. 奶油奶酪室温软化，按下能留下凹痕\n3. 依次加糖、蛋、淡奶油，搅拌均匀\n4. 面糊过筛一遍，口感更顺滑\n5. 铺油纸、入模\n6. 220°C 烤 25 分钟\n7. 冷藏一晚再切，切面更好看\n\n#巴斯克芝士蛋糕 #烘焙新手 #烘焙教程'},
+      {title:'巴斯克芝士蛋糕｜焦香流心，成败关键在第 2 步',body:'很多人做巴斯克结块，其实是奶油奶酪没软化好。\n这次把每一步的状态都拍清楚了👇\n\n软化：按下有凹痕 → 搅拌 → 过筛 → 220°C 25 分钟\n\n#巴斯克 #烘焙日记 #芝士蛋糕'},
+    ],
+  },
+  vlog:{
+    topic:'周末一日 vlog', label:'vlog', total:'2 分 05 秒',
+    clips:{
+      1:{e:'🌅',t:'窗外清晨',g:G('#FBD3A6','#8FA8D9'),d:'0:05',tag:'空镜'},
+      2:{e:'☕',t:'咖啡拉花',g:G('#E8D2B8','#8C6342'),d:'0:07',tag:'咖啡店'},
+      3:{e:'📖',t:'看书',g:G('#F1E9DB','#C2AE8C'),d:'0:06',tag:'咖啡店'},
+      4:{e:'🚶',t:'街道',g:G('#D9DEE4','#8B97A6'),d:'0:05',tag:'路上'},
+      5:{e:'🌳',t:'公园',g:G('#CFE8C7','#6FA765'),d:'0:08',tag:'公园'},
+      6:{e:'🦆',t:'湖边',g:G('#C6E2EE','#5E9BB5'),d:'0:06',tag:'湖边'},
+      7:{e:'🍜',t:'晚饭',g:G('#F3D4AE','#B9773F'),d:'0:06',tag:'晚饭'},
+      8:{e:'🪞',t:'商场镜子',g:G('#E3E0EC','#9A94B3'),d:'0:04',tag:'路上'},
+      9:{e:'🌃',t:'夜景',g:G('#3B3F6B','#12142B'),d:'0:06',tag:'夜景'},
+    },
+    extra:[{e:'🐱',t:'',g:G('#C9D6E3','#8FA3B8')},{e:'📄',t:'',g:G('#ECECEC','#BDBDBD')},{e:'🧋',t:'',g:G('#E9D5BC','#A97E52')}],
+    steps:[
+      {id:'v1',name:'开场',clips:[1],status:'suggest',
+        q:'今天要去哪？做什么？',
+        why:'前 5 秒是一段空镜，观众还没看懂这条视频要讲什么，可能就划走了。',
+        tip:'开场先对镜头说一句今天要做什么',
+        voice:'周末终于有空，去城西那家新开的咖啡店坐一下午。',
+        opts:[
+          {k:'voice',t:'补一段 5 秒口播',d:'现在录一句话，配在开场空镜上',cost:'约 1 分钟',reco:'当天的场景回不去了，但“补说”很容易'},
+          {k:'card',t:'加一句开场字幕',d:'不想出声的话，用字幕交代',cost:'约 30 秒'},
+          {k:'skip',t:'不用，我喜欢这样',d:'vlog 没有标准答案，保留你的风格',cost:''},
+        ],
+        card:{title:'周末 · 去城西喝咖啡',body:'一个人的慢悠悠周六'}},
+      {id:'v2',name:'上午：咖啡店',clips:[2,3],status:'ok'},
+      {id:'v3',name:'有你自己出镜',clips:[],status:'suggest',
+        q:'是谁在过这一天？',
+        why:'全片没有出现你自己，观众很难有代入感。不过第 8 段的镜子里拍到了你。',
+        tip:'至少留一个自己出镜的镜头',
+        found:{clip:8,range:'0:01 – 0:03'},
+        opts:[
+          {k:'found',t:'用第 8 段镜子里的你',d:'0:01–0:03 镜子里拍到了你，截出来放在下午开头',cost:'0 成本',reco:'真实、不刻意'},
+          {k:'skip',t:'不用，我不想出镜',d:'也完全没问题',cost:''},
+        ]},
+      {id:'v4',name:'下午：公园散步',clips:[4,5,6],status:'ok'},
+      {id:'v5',name:'晚上',clips:[7,9],status:'ok'},
+      {id:'v6',name:'当天的感受',clips:[],status:'suggest',
+        q:'这一天过得怎么样？',
+        why:'只有画面没有感受，结尾停在夜景上会显得有点突然。',
+        tip:'结尾录一句今天的感受',
+        voice:'什么都没干的一天，但好像充好电了。',
+        voiceClip:9,
+        opts:[
+          {k:'voice',t:'补一段画外音',d:'录一句今天的感受，配在结尾夜景上',cost:'约 1 分钟',reco:'一句话就能让结尾有落点'},
+          {k:'skip',t:'不用了',d:'保留现在的结尾',cost:''},
+        ]},
+    ],
+    caption:[
+      {title:'普通周末也值得记录｜城西咖啡店 + 湖边散步',body:'什么都没干的一天，但好像充好电了。\n\n☕ 城西新开的咖啡店\n🌳 下午去湖边走走\n🌃 晚上吃了碗面\n\n#周末vlog #一人食 #城市漫步'},
+      {title:'一个人的周六，慢一点也很好',body:'给自己放一天假 ☕🌳🌃\n\n#vlog日常 #周末去哪儿'},
+    ],
+  }
+};
+
+const RES = {
+  card:{t:'已用图文卡片补充',p:'p-blue',ok:true,badge:'示意卡片',bc:'b-blue'},
+  found:{t:'已从原素材找回',p:'p-green',ok:true,badge:'原素材找回',bc:'b-green'},
+  reshoot:{t:'已补拍',p:'p-green',ok:true,badge:'补拍',bc:'b-green'},
+  ai:{t:'已加 AI 过渡（已标注）',p:'p-purple',ok:true,badge:'AI 生成 · 仅作衔接',bc:'b-purple'},
+  brighten:{t:'已提亮（画质一般）',p:'p-amber',ok:true,badge:'已提亮',bc:'b-amber'},
+  voice:{t:'已补口播',p:'p-green',ok:true,badge:'补口播',bc:'b-green'},
+  confirmed:{t:'你已确认拍到',p:'p-green',ok:true},
+  skip:{t:'已跳过 · 记入下次拍摄清单',p:'p-gray',ok:false},
+};
+const STATUS = {
+  ok:{t:'拍到了',p:'p-green',c:'var(--green)'},
+  missing:{t:'缺失',p:'p-red',c:'var(--red)'},
+  partial:{t:'没拍清楚',p:'p-amber',c:'var(--amber)'},
+  jump:{t:'衔接断档',p:'p-amber',c:'var(--amber)'},
+  weak:{t:'画面看不清',p:'p-amber',c:'var(--amber)'},
+  suggest:{t:'可以试试',p:'p-blue',c:'var(--blue)'},
+};
+const OPT_IC = {card:'🗂️',found:'🔍',reshoot:'📷',ai:'✨',brighten:'☀️',voice:'🎙️',skip:'⏭️',nogen:'🚫'};
+
+/* ============ 状态 ============ */
+const S = {};
+function resetState(keepScenario){
+  const sc = keepScenario ? S.scenario : 'normal';
+  Object.assign(S,{scenario:sc,type:'tutorial',res:{},cards:{},voices:{},confirmedClip:{},stack:[],screen:'home',params:{},entry:'edit',tries:0,cardStyle:0,aiVariant:0,realCam:false,remind:true,capIdx:0,player:'after'});
+}
+resetState();
+const D = ()=>DATA[S.type];
+function steps(){
+  return D().steps.map(s=>{
+    if(S.type==='tutorial' && S.scenario==='wrong' && s.id==='s5') return {...s,...D().wrong};
+    return s;
+  });
+}
+const isGap = s=>s.status!=='ok';
+const understood = ()=>steps().filter(s=>!isGap(s) || (S.res[s.id] && RES[S.res[s.id]].ok)).length;
+const openGaps = ()=>steps().filter(s=>isGap(s) && !S.res[s.id]);
+
+/* ============ 工具 ============ */
+const $ = s=>document.querySelector(s);
+let timers=[];
+const later=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t);return t;};
+function clearTimers(){timers.forEach(clearTimeout);timers=[];stopCam();}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
+function sheet(html){$('#sheet-root').innerHTML=`<div class="backdrop" onclick="closeSheet()"></div><div class="sheet"><div class="grab"></div>${html}</div>`;}
+function closeSheet(){$('#sheet-root').innerHTML='';}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function frame(c,o={}){
+  const cls=['frame',o.cls||'',c.dark&&!o.fixed&&!o.bright?'is-dark':'',o.bright?'is-bright':''].join(' ');
+  return `<div class="${cls}" ${o.attr||''}><div class="frame-img" style="background:${c.g}"><span>${c.e}</span></div>
+    ${o.label===false||!c.t?'':`<div class="frame-label">${c.t}</div>`}
+    ${o.dur===false||!c.d?'':`<div class="frame-dur">${c.d}</div>`}
+    ${o.num?`<div class="frame-num">${o.num}</div>`:''}
+    ${o.badge?`<div class="frame-badge ${o.bc||''}">${o.badge}</div>`:''}
+    ${o.tag?`<div class="tagfly">${o.tag}</div>`:''}
+    ${o.extra||''}</div>`;
+}
+function cardFrame(card,o={}){
+  return `<div class="frame card-frame cs-${o.style??S.cardStyle} ${o.cls||''}">
+    <div class="cf-tag">示意</div>
+    <div class="cf-title">${esc(card.title)}</div><div class="cf-body">${esc(card.body)}</div>
+    ${o.badge?`<div class="frame-badge b-blue" style="top:auto;bottom:10px">${o.badge}</div>`:''}</div>`;
+}
+function aiFrame(o={}){
+  const v=o.v??S.aiVariant;
+  return `<div class="frame ai-frame ${v?'v1':''} ${o.cls||''}"><div class="frame-img"><span>${v?'🕰️':'♨️'}</span></div>
+    <div class="frame-badge b-purple">AI 生成 · 仅作衔接</div></div>`;
+}
+const topBar=(title,o={})=>`<div class="topbar">
+  ${o.back===false?'<div class="icon"></div>':`<button class="icon" onclick="${o.onBack||'back()'}" aria-label="返回">‹</button>`}
+  <div class="title">${title}</div>${o.right||'<div class="icon"></div>'}</div>`;
+
+/* ============ 路由 ============ */
+function go(screen,params={},opt={}){
+  clearTimers();closeSheet();
+  if(!opt.replace && S.screen) S.stack.push({screen:S.screen,params:S.params});
+  S.screen=screen;S.params=params;render();
+}
+function back(){clearTimers();closeSheet();const p=S.stack.pop();if(p){S.screen=p.screen;S.params=p.params;render();}}
+function goReport(){ // 回到报告页，丢弃中间页
+  const i=S.stack.map(x=>x.screen).lastIndexOf('report');
+  if(i<0){go('report');return;}
+  clearTimers();closeSheet();
+  S.stack=S.stack.slice(0,i);S.screen='report';S.params={};render();
+}
+function render(){
+  const out=SCREENS[S.screen](S.params);
+  $('#app').innerHTML=`<div class="page">${out.html}</div>`;
+  out.after&&out.after();
+  renderConsole();
+}
+
+/* ============ 页面 ============ */
+const SCREENS={};
+
+SCREENS.home=()=>({html:`
+  <div class="home-head"><div class="logo">小影</div><div class="avatar">🧁</div></div>
+  <div class="body">
+    <button class="hero" onclick="S.entry='edit';go('album')"><div class="plus">+</div><div><b>开始剪辑</b><span style="opacity:.85;font-size:13px">导入视频和照片</span></div></button>
+    <div class="tools">
+      <button class="tool" onclick="toast('一键成片（Demo 未展开）')"><div class="ic">🎬</div>一键成片</button>
+      <button class="tool" onclick="toast('模板（Demo 未展开）')"><div class="ic">🧩</div>模板</button>
+      <button class="tool" onclick="toast('AI 字幕（Demo 未展开）')"><div class="ic">💬</div>AI 字幕</button>
+      <button class="tool hl" onclick="S.entry='tool';go('album')"><span class="new">NEW</span><div class="ic">🩺</div>镜头体检</button>
+    </div>
+    <div class="h2">草稿</div>
+    <div class="drafts">
+      <div class="draft">${frame({e:'🍪',g:G('#F3DDBA','#C78A4E')},{dur:false})}<div class="meta">曲奇试做<div class="muted small">3 天前</div></div></div>
+      <div class="draft">${frame({e:'🏖️',g:G('#BFE0F0','#E8C994')},{dur:false})}<div class="meta">海边周末<div class="muted small">上周</div></div></div>
+    </div>
+  </div>
+  <div class="tabbar"><div class="on"><span>🏠</span>首页</div><div><span>🧩</span>模板</div><div><span>➕</span>创作</div><div><span>👤</span>我的</div></div>`});
+
+SCREENS.album=()=>{
+  const d=D(), ids=Object.keys(d.clips);
+  const cells=ids.map((id,i)=>frame(d.clips[id],{num:i+1,label:false})).join('')+d.extra.map(c=>frame({...c,d:'0:0'+(3+Math.floor(Math.random()*6))},{cls:'unsel',label:false})).join('');
+  return {html:`${topBar(S.entry==='tool'?'选择要检查的素材':'选择素材')}
+    <div style="display:flex;gap:18px;padding:0 16px 10px;font-size:14px"><b>视频</b><span class="muted">照片</span><span class="muted">全部</span></div>
+    <div class="body" style="padding:0 2px"><div class="grid3">${cells}</div></div>
+    <div class="bottombar"><div style="flex:1;font-size:13px" class="muted">已选 <b style="color:var(--text)">${ids.length}</b> 段 · ${d.total}</div>
+      <button class="btn btn-primary btn-sm" style="height:40px;padding:0 22px" onclick="albumNext()">下一步</button></div>`};
+};
+function albumNext(){
+  if(S.entry==='tool'){go('setup');return;}
+  sheet(`<div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:30px">🩺</div>
+      <div><div style="font-weight:700;font-size:17px;line-height:1.4">这 12 段素材看起来是一条制作教程</div>
+      <div class="muted" style="margin-top:6px;line-height:1.6">剪辑之前，要不要先让 AI 站在<b style="color:var(--text)">观众</b>的角度检查一遍：有没有漏拍的步骤、哪里看不清？大约 20 秒。</div></div></div>
+    <div class="btns"><button class="btn btn-primary" onclick="go('setup')">开始体检</button>
+    <button class="btn btn-ghost" onclick="closeSheet();toast('进入普通剪辑（Demo 未展开）')">直接剪辑</button></div>
+    <div class="muted small" style="text-align:center;margin-top:12px">体检不会改动你的素材 · 可在设置中关闭此提示</div>`);
+}
+
+SCREENS.setup=()=>{
+  const d=D(), ids=Object.keys(d.clips);
+  const unknown=S.scenario==='unknown';
+  return {html:`${topBar('镜头体检')}
+  <div class="body">
+    <div class="h1">先确认一下，<br>这是一条什么内容？</div>
+    <div class="muted small" style="margin-top:8px">已选 ${ids.length} 段 · 共 ${d.total}</div>
+    <div class="strip" style="margin-top:10px">${ids.map(id=>frame(d.clips[id],{cls:'',label:false,dur:false})).join('')}</div>
+    <div class="h2">内容类型</div>
+    <div class="chips">
+      <button class="chip ${S.type==='tutorial'?'on':''}" onclick="setType('tutorial')">🍰 制作教程</button>
+      <button class="chip ${S.type==='vlog'?'on':''}" onclick="setType('vlog')">📷 vlog</button>
+      <button class="chip" onclick="toast('Demo 中暂只提供「教程」和「vlog」示例')">📦 开箱测评</button>
+    </div>
+    <div class="h2">主题 ${unknown?'<span class="pill p-amber">AI 没认出来</span>':'<span class="pill p-gray">AI 识别 · 可修改</span>'}</div>
+    <input class="input" id="topic" value="${unknown?'':esc(d.topic)}" placeholder="${unknown?'没认出在做什么，可以手动填写，或先检查再确认':''}">
+    <div class="h2">AI 会做什么</div>
+    <div class="card" style="font-size:13px;line-height:1.75;color:var(--sub)">
+      ① 识别每段素材在拍什么<br>
+      ② 对照「${S.type==='tutorial'?'这道甜品通常需要的步骤':'vlog 通常会有的要素'}」<br>
+      ③ 站在<b style="color:var(--text)">第一次看这条视频的观众</b>的角度，指出看不懂的地方<br>
+      <span style="color:var(--faint)">不会自动删改你的素材</span>
+    </div>
+    ${S.type==='vlog'?'<div class="explain" style="margin-top:10px">vlog 没有标准答案，AI 只会给<b>建议</b>，不会判断对错。</div>':''}
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" onclick="startCheck()">开始检查（约 20 秒）</button></div>`};
+};
+function setType(t){if(S.type===t)return;S.type=t;S.res={};S.cards={};S.voices={};S.confirmedClip={};render();toast(t==='vlog'?'已切换为 vlog 示例素材':'已切换为烘焙教程示例素材');}
+function startCheck(){const v=$('#topic').value.trim();if(v)S.topicInput=v;go('analyzing');}
+
+SCREENS.analyzing=()=>{
+  const d=D(), ids=Object.keys(d.clips);
+  const stages=['识别每段素材在拍什么',`对照${S.type==='tutorial'?'制作步骤':'vlog 常见要素'}`,'站在观众的角度检查'];
+  return {html:`${topBar('正在检查',{back:false,right:`<button class="link" onclick="back()">取消</button>`})}
+  <div class="body">
+    <div class="bar" style="margin-top:6px"><i id="pbar"></i></div>
+    <div id="stages" style="margin-top:8px">${stages.map((s,i)=>`<div class="stage-row" id="st${i}"><div class="st-ic">○</div><div style="flex:1">${s}</div><div class="small" id="sm${i}"></div></div>`).join('')}</div>
+    <div id="slowhint" class="explain" style="display:none;margin-top:12px">网络有点慢，已改用低清版本分析，你可以先离开，检查完会通知你。</div>
+    <div class="grid4" style="margin-top:16px" id="agrid">${ids.map(id=>frame(d.clips[id],{label:false,tag:d.clips[id].tag,attr:`id="ac${id}"`})).join('')}</div>
+  </div>`,after:runAnalysis};
+};
+function runAnalysis(){
+  const d=D(), ids=Object.keys(d.clips);
+  const slow=S.scenario==='slow', k=slow?2.2:1;
+  const dur=[1500*k,1300*k,1200*k];
+  const setStage=(i,state)=>{const r=$('#st'+i);if(!r)return;r.className='stage-row '+state;r.querySelector('.st-ic').innerHTML=state==='active'?'<div class="spinner"></div>':state==='done'?'✓':state==='failed'?'✕':'○';};
+  const pbar=v=>{const b=$('#pbar');if(b)b.style.width=v+'%';};
+  setStage(0,'active');pbar(5);
+  ids.forEach((id,i)=>{
+    later(()=>{const f=$('#ac'+id);if(f)f.classList.add('scan');},i*dur[0]/ids.length);
+    later(()=>{const f=$('#ac'+id);if(f){f.classList.remove('scan');f.classList.add('tagged');}},(i+1)*dur[0]/ids.length);
+  });
+  if(slow) later(()=>{const h=$('#slowhint');if(h)h.style.display='block';},1800);
+  later(()=>{setStage(0,'done');setStage(1,'active');pbar(40);
+    $('#sm0').textContent=`识别出 ${ids.length} 段`;
+    if(S.scenario==='fail'){later(()=>{setStage(1,'failed');pbar(55);later(()=>go('error',{},{replace:true}),700);},dur[1]*.6);return;}
+    later(()=>{setStage(1,'done');setStage(2,'active');pbar(75);$('#sm1').textContent=`${steps().length} 个${S.type==='tutorial'?'步骤':'要素'}`;
+      later(()=>{setStage(2,'done');pbar(100);
+        later(()=>go(S.scenario==='unknown'?'pickTemplate':'report',{},{replace:true}),450);
+      },dur[2]);
+    },dur[1]);
+  },dur[0]);
+}
+
+SCREENS.error=()=>({html:`${topBar('镜头体检',{onBack:"goHome()"})}
+  <div class="body" style="text-align:center">
+    <div class="empty-ic">📡</div>
+    <div class="h1">这次没检查完</div>
+    <div class="muted" style="margin-top:10px;line-height:1.7">网络连接中断了。<br>你的素材都还在，不会丢失。</div>
+    <div class="card" style="text-align:left;margin-top:22px;font-size:13px;line-height:1.8;color:var(--sub)">
+      已完成：识别 12 段素材 ✓<br>中断在：对照制作步骤<br>重新检查会从中断处继续，大约 10 秒
+    </div>
+  </div>
+  <div class="bottombar" style="flex-direction:column">
+    <button class="btn btn-primary" onclick="S.scenario='normal';toast('已从中断处继续');go('analyzing',{},{replace:true})">重新检查</button>
+    <button class="btn btn-ghost" onclick="toast('进入普通剪辑（Demo 未展开）')">跳过检查，直接剪辑</button>
+  </div>`});
+
+SCREENS.pickTemplate=()=>{
+  const opts=S.type==='tutorial'?[['🧀','巴斯克芝士蛋糕','62%'],['🍰','重芝士蛋糕','48%'],['🍮','焦糖布丁','21%']]:[['📷','周末一日 vlog','58%'],['✈️','旅行 vlog','33%']];
+  return {html:`${topBar('镜头体检',{onBack:"goHome()"})}
+  <div class="body">
+    <div class="h1">没太认出来，<br>你在做的是哪一个？</div>
+    <div class="muted" style="margin-top:8px;line-height:1.6">选一个最接近的，AI 会按它的步骤来检查。选错了也没关系，报告里可以逐条纠正。</div>
+    <div style="margin-top:20px">${opts.map(o=>`<button class="tpl" onclick="S.scenario='normal';go('report',{},{replace:true});toast('已按「${o[1]}」的步骤检查')"><span style="font-size:24px">${o[0]}</span><div><b>${o[1]}</b></div><span class="conf">AI 把握 ${o[2]}</span></button>`).join('')}
+    <button class="tpl" onclick="toast('手动添加步骤（Demo 未展开）')"><span style="font-size:24px">✍️</span><div><b>都不是，我自己列步骤</b></div></button></div>
+  </div>`};
+};
+function goHome(){S.stack=[];S.screen='';go('home',{},{replace:true});}
+
+SCREENS.report=()=>{
+  const st=steps(), n=understood(), total=st.length, open=openGaps().length;
+  const tut=S.type==='tutorial';
+  const C=2*Math.PI*36, pct=n/total;
+  const head=tut?`
+    <div class="score">
+      <div class="ring"><svg width="84" height="84"><circle cx="42" cy="42" r="36" stroke="var(--surface2)" stroke-width="8" fill="none"/><circle cx="42" cy="42" r="36" stroke="${pct===1?'var(--green)':'var(--accent)'}" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .6s"/></svg>
+        <div class="num">${n}/${total}<small>步看得懂</small></div></div>
+      <div><div style="font-size:18px;font-weight:700;line-height:1.4">${open?`有 ${open} 处，观众<br>可能会看不懂`:'都讲清楚了 🎉'}</div>
+      <div class="muted small" style="margin-top:6px">${esc(S.topicInput||D().topic)} · ${Object.keys(D().clips).length} 段素材</div></div>
+    </div>`:`
+    <div style="font-size:18px;font-weight:700;line-height:1.4">这条 vlog 已经很完整了</div>
+    <div class="muted" style="margin-top:6px;font-size:13px;line-height:1.6">${open?`有 ${open} 条可以试试的建议，不改也没关系。`:'建议都处理完了 🎉'}</div>`;
+  const legend=tut?`<div class="legend"><span><i style="background:var(--green)"></i>拍到了</span><span><i style="background:var(--amber)"></i>没拍清楚</span><span><i style="background:var(--red)"></i>缺失</span><span><i style="background:var(--blue)"></i>卡片补充</span></div>`:'';
+  const rows=st.map(s=>{
+    const r=S.res[s.id], stt=STATUS[s.status];
+    const dot=r?(RES[r].ok?(r==='card'?'var(--blue)':'var(--green)'):'var(--faint)'):stt.c;
+    const thumbs=s.clips.length?`<div class="thumbs">${s.clips.map(id=>frame(D().clips[id],{cls:'mini',label:false,dur:false,fixed:r==='reshoot',bright:r==='brighten'})).join('')}</div>`:'';
+    let body='';
+    if(isGap(s)&&!r){
+      body=`<div class="issue">
+        <div class="q">💬 观众可能会问：<b>${esc(s.q)}</b></div>
+        <div class="why">${esc(s.why)}</div>
+        <div class="acts"><button class="btn btn-primary btn-sm" onclick="go('fix',{id:'${s.id}'})">去处理 ›</button>
+        <button class="btn btn-ghost btn-sm" onclick="go('confirm',{id:'${s.id}'})">这步我拍了</button></div></div>`;
+    } else if(r){
+      body=`<div class="resolved"><span class="pill ${RES[r].p}">✓ ${RES[r].t}</span><button class="change" onclick="undo('${s.id}')">撤销</button></div>`;
+    }
+    return `<div class="step"><div class="dot" style="background:${dot}"></div>
+      <div class="row"><span class="name">${esc(s.name)}</span>${r?'':`<span class="pill ${stt.p}">${stt.t}</span>`}</div>${thumbs}${body}</div>`;
+  }).join('');
+  return {html:`${topBar('体检报告',{onBack:"goHome()",right:open?`<button class="link" onclick="skipAll()">全部跳过</button>`:'<div class="icon"></div>'})}
+  <div class="body">${head}${legend}<div class="h2">${tut?'制作步骤':'内容要素'}</div><div class="tl">${rows}</div>
+    ${tut?'<div class="explain">AI 按「'+esc(S.topicInput||D().topic)+'」的常见做法对照检查。如果你的做法本来就不一样，点「这步我拍了」或「撤销」即可。</div>':''}
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" onclick="makeFilm()">${open?'生成成片':'生成成片 ✓'}</button></div>`};
+};
+function undo(id){delete S.res[id];render();}
+function skipAll(){
+  sheet(`<div style="font-weight:700;font-size:17px">跳过全部，直接成片？</div>
+    <div class="muted" style="margin-top:8px;line-height:1.6">这些问题会记进「下次拍摄清单」，下次拍同类内容时提醒你。</div>
+    <div class="btns"><button class="btn btn-primary" onclick="openGaps().forEach(s=>S.res[s.id]='skip');closeSheet();go('generating')">跳过并生成成片</button>
+    <button class="btn btn-ghost" onclick="closeSheet()">再看看</button></div>`);
+}
+function makeFilm(){
+  const open=openGaps();
+  if(!open.length){go('generating');return;}
+  sheet(`<div style="font-weight:700;font-size:17px">还有 ${open.length} 处没处理</div>
+    <div class="muted" style="margin-top:8px;line-height:1.6">${open.map(s=>'· '+esc(s.name)).join('<br>')}<br><br>${S.type==='tutorial'?'观众可能会在这些地方看不懂。':'不处理也可以，vlog 没有标准答案。'}</div>
+    <div class="btns"><button class="btn btn-primary" onclick="closeSheet();go('fix',{id:'${open[0].id}'})">继续处理</button>
+    <button class="btn btn-ghost" onclick="open_skip()">直接生成</button></div>`);
+}
+function open_skip(){openGaps().forEach(s=>S.res[s.id]='skip');closeSheet();go('generating');}
+
+SCREENS.fix=({id})=>{
+  const s=steps().find(x=>x.id===id);
+  const opts=s.opts.map((o,i)=>{
+    if(o.k==='nogen') return `<div class="opt disabled"><div class="oi">${OPT_IC[o.k]}</div><div style="flex:1"><div class="ot">${o.t}<span class="pill p-gray">不提供</span></div><div class="od">${o.d}</div></div></div>`;
+    return `<button class="opt ${o.reco?'reco':''}" onclick="pick('${id}','${o.k}')"><div class="oi">${OPT_IC[o.k]}</div>
+      <div style="flex:1"><div class="ot">${o.t}${o.reco?'<span class="pill p-accent">推荐</span>':''}</div><div class="od">${o.d}${o.reco?`<br><span style="color:#FF9C8C">${o.reco}</span>`:''}</div></div>
+      ${o.cost?`<span class="oc">${o.cost}</span>`:''}</button>`;
+  }).join('');
+  const thumbs=s.clips.length?`<div style="display:flex;gap:6px;margin-top:12px">${s.clips.map(c=>`<div style="width:54px">${frame(D().clips[c],{label:false})}</div>`).join('')}</div>`:'';
+  return {html:`${topBar(esc(s.name))}
+  <div class="body">
+    <div class="card"><div style="font-size:15px;line-height:1.55">💬 <b style="color:#FFB3A8">${esc(s.q)}</b></div><div class="muted small" style="margin-top:8px;line-height:1.6">${esc(s.why)}</div>${thumbs}</div>
+    <div class="h2" style="margin-bottom:2px">补救方案</div>
+    <div class="rank">按成本从低到高排列</div>
+    ${opts}
+    ${S.type==='tutorial'?`<div class="explain">💡 为什么 AI 不直接生成缺失的步骤？教程是要照着做的，生成的画面可能是错的。AI 只用于不影响教学内容的过渡空镜，并会明确标注。</div>`:''}
+  </div>`};
+};
+function pick(id,k){
+  const s=steps().find(x=>x.id===id);
+  if(k==='skip'){S.res[id]='skip';toast('已记进「下次拍摄清单」');goReport();return;}
+  if(k==='card'){go('card',{id});return;}
+  if(k==='found'){go('found',{id});return;}
+  if(k==='ai'){go('ai',{id});return;}
+  if(k==='brighten'){go('brighten',{id});return;}
+  if(k==='voice'){go('voice',{id});return;}
+  if(k==='reshoot'){S.tries=0;go('reshoot',{id});return;}
+}
+function resolve(id,k,msg){S.res[id]=k;goReport();toast(msg||'已处理 ✓');}
+
+SCREENS.card=({id})=>{
+  const s=steps().find(x=>x.id===id);
+  const c=S.cards[id]||{...s.card};S.cards[id]=c;
+  return {html:`${topBar('图文卡片')}
+  <div class="body">
+    <div style="width:52%;margin:4px auto 0" id="cardprev">${cardFrame(c,{cls:'big'})}</div>
+    <div class="h2">标题</div><input class="input" value="${esc(c.title)}" oninput="S.cards['${id}'].title=this.value;updCard('${id}')">
+    <div class="h2">说明</div><textarea class="input" rows="3" oninput="S.cards['${id}'].body=this.value;updCard('${id}')">${esc(c.body)}</textarea>
+    <div class="h2">样式</div>
+    <div class="swatches">${[0,1,2].map(i=>`<button class="cs-${i} ${S.cardStyle===i?'on':''}" onclick="S.cardStyle=${i};this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on');updCard('${id}')"></button>`).join('')}</div>
+    <div class="explain" style="margin-top:16px">卡片右上角会固定标注“示意”，让观众知道这里不是实拍画面。</div>
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" onclick="resolve('${id}','card','已插入图文卡片 ✓')">使用这张卡片</button></div>`};
+};
+function updCard(id){$('#cardprev').innerHTML=cardFrame(S.cards[id],{cls:'big'});}
+
+SCREENS.found=({id})=>{
+  const s=steps().find(x=>x.id===id), c=D().clips[s.found.clip];
+  return {html:`${topBar('从原素材找回')}
+  <div class="body">
+    <div class="muted" style="font-size:13px;line-height:1.6">在 <b style="color:var(--text)">第 ${s.found.clip} 段「${c.t}」</b> 的结尾找到了这一步：</div>
+    <div style="width:56%;margin:14px auto 0">${frame(c,{cls:'big',extra:'<div class="spot"></div>'})}</div>
+    <div class="trim"><div class="sel"></div></div>
+    <div class="trimlbl"><span>0:00</span><span style="color:var(--accent)">${s.found.range}</span><span>${c.d}</span></div>
+    <div class="explain" style="margin-top:14px">会把框选区域截出来、放大，单独作为「${esc(s.name)}」一步。用的是你真实拍到的画面。</div>
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" onclick="resolve('${id}','found','已从原素材找回 ✓')">使用这段</button></div>`};
+};
+
+SCREENS.ai=({id})=>({html:`${topBar('AI 过渡空镜')}
+  <div class="body">
+    <div style="width:56%;margin:4px auto 0" id="aiprev">${aiFrame({cls:'big'})}</div>
+    <div style="text-align:center;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="S.aiVariant=1-S.aiVariant;$('#aiprev').innerHTML=aiFrame({cls:'big'})">↻ 换一个</button></div>
+    <div class="h2">使用规则</div>
+    <div class="card" style="font-size:13px;line-height:1.8;color:var(--sub)">
+      ✓ 只生成 2 秒左右的空镜，用来衔接「放入烤箱」和「出炉」<br>
+      ✓ 画面角落固定标注「AI 生成」<br>
+      ✕ 不生成任何操作步骤和食材状态
+    </div>
+    <div class="explain" style="margin-top:10px">只放空镜，观众不知道温度和时间的问题还在。可以再加一张参数卡片。</div>
+  </div>
+  <div class="bottombar"><button class="btn btn-ghost" onclick="go('card',{id:'${id}'})">改用参数卡片</button><button class="btn btn-primary" onclick="resolve('${id}','ai','已加入 AI 过渡（已标注）')">使用</button></div>`});
+
+SCREENS.brighten=({id})=>{
+  const c=D().clips[10];
+  return {html:`${topBar('一键提亮')}
+  <div class="body">
+    <div style="display:flex;gap:12px;margin-top:6px">
+      <div style="flex:1;text-align:center">${frame(c,{label:false})}<div class="muted small" style="margin-top:6px">原画面</div></div>
+      <div style="flex:1;text-align:center">${frame(c,{label:false,bright:true})}<div class="muted small" style="margin-top:6px">提亮后</div></div>
+    </div>
+    <div class="explain" style="margin-top:16px">提亮能看清轮廓，但暗部噪点明显、焦糖色发灰。<b>巴斯克最重要的就是表面颜色</b>，如果蛋糕还在，补拍效果会好很多。</div>
+  </div>
+  <div class="bottombar"><button class="btn btn-ghost" onclick="S.tries=0;go('reshoot',{id:'${id}'},{replace:true})">改为补拍</button><button class="btn btn-primary" onclick="resolve('${id}','brighten','已提亮')">仍然使用</button></div>`};
+};
+
+SCREENS.reshoot=({id})=>{
+  const s=steps().find(x=>x.id===id);
+  const c=D().clips[s.rclip||s.clips[0]||D().reshootClip];
+  const lit=S.tries>0;
+  return {html:`<div class="vf">
+    <div class="vf-view" id="vfview">
+      <div class="scene" id="scene" style="background:${c.g};filter:brightness(${lit?1:.42})"><span>${c.e}</span></div>
+      <div class="ghost"><em>对齐原镜头的位置</em><span>${c.e}</span></div>
+      <div class="vf-top"><button class="icon" style="width:32px;height:32px;font-size:18px" onclick="back()">✕</button><div class="t">补拍：${esc(s.name)}</div>
+        <button class="switch ${S.realCam?'on':''}" onclick="toggleCam(this)"><i></i>真实摄像头</button></div>
+      <div class="meter"><div class="track"><div class="goal"></div><div class="fill" id="mfill" style="height:${lit?78:45}%;background:${lit?'var(--green)':'var(--amber)'}"></div></div>亮度</div>
+      <div class="vf-hints" id="hints">${lit?'<span>☀️ 光线可以了</span><span>📍 对齐虚线框</span>':'<span>📍 对齐虚线框</span><span>☀️ 太暗，靠近窗边</span><span>🔍 拍到表面的焦糖色</span>'}</div>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="vf-bottom"><div class="vf-side">${frame(c,{label:false,dur:false})}<div style="margin-top:4px">原镜头</div></div>
+      <button class="shutter" onclick="shoot('${id}')" aria-label="拍摄"><i></i></button><div class="vf-side">第 ${S.tries+1} 次</div></div>
+  </div>`,after:()=>{if(S.realCam)startCam();}};
+};
+let camStream=null;
+function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){S.realCam=false;toast('当前浏览器不支持摄像头，已使用模拟画面');render();return;}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}).then(st=>{
+    camStream=st;const v=document.createElement('video');v.autoplay=true;v.playsInline=true;v.muted=true;v.srcObject=st;v.id='camv';
+    const view=$('#vfview');if(!view){stopCam();return;}view.insertBefore(v,view.children[1]);$('#scene').style.display='none';
+  }).catch(()=>{S.realCam=false;toast('无法打开摄像头，已切回模拟画面');render();});
+}
+function stopCam(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}}
+function toggleCam(el){S.realCam=!S.realCam;el.classList.toggle('on',S.realCam);if(S.realCam)startCam();else{stopCam();const v=$('#camv');v&&v.remove();$('#scene').style.display='';}}
+function shoot(id){
+  const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
+  const s=steps().find(x=>x.id===id);
+  later(()=>{
+    sheet(`<div style="display:flex;align-items:center;gap:10px"><div class="spinner"></div><b>AI 正在检查这张补拍…</b></div>`);
+    later(()=>{
+      if(S.tries===0){
+        sheet(`<div style="font-weight:700;font-size:17px">还是有点暗</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 机位和原镜头一致</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 主体清晰</div>
+          <div class="check-li"><span style="color:var(--amber)">!</span> 亮度 46%，细节仍看不清（建议 65% 以上）</div>
+          <div class="muted small" style="margin-top:6px">试试把蛋糕端到窗边，或打开台灯。</div>
+          <div class="btns"><button class="btn btn-primary" onclick="S.tries=1;closeSheet();render();toast('已移到窗边，光线变好了')">重拍</button>
+          <button class="btn btn-ghost" onclick="closeSheet();go('card',{id:'${id}'},{replace:true})">改用图文卡片</button>
+          <button class="btn btn-ghost" onclick="closeSheet();resolve('${id}','reshoot','已使用这次补拍')">就用这张</button></div>`);
+      } else {
+        sheet(`<div style="font-weight:700;font-size:17px">补拍合格 ✓</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 机位和原镜头一致，剪进去不会跳</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 亮度 79%，焦糖色表面清楚</div>
+          <div class="check-li"><span style="color:var(--green)">✓</span> 主体在画面中央</div>
+          <div class="btns"><button class="btn btn-primary" onclick="closeSheet();resolve('${id}','reshoot','补拍已替换原镜头 ✓')">替换原镜头</button></div>`);
+      }
+    },1100);
+  },380);
+}
+
+SCREENS.voice=({id})=>{
+  const s=steps().find(x=>x.id===id);
+  const c=D().clips[s.clips[0]||s.voiceClip];
+  return {html:`${topBar('补一段口播')}
+  <div class="body" style="text-align:center">
+    <div style="width:40%;margin:4px auto 0">${frame(c,{label:false})}</div>
+    <div class="muted small" style="margin-top:8px">会配在「${esc(s.name)}」的画面上</div>
+    <div class="muted" style="margin-top:18px;font-size:13px">可以说说：<b style="color:var(--text)">${esc(s.q)}</b></div>
+    <div class="wave" id="wave">${Array.from({length:22},(_,i)=>`<i style="animation-delay:${(i%7)*.09}s"></i>`).join('')}</div>
+    <button class="mic" id="mic" onclick="toggleRec('${id}')">🎙️</button>
+    <div class="muted small" id="rectip" style="margin-top:12px">点击开始录音</div>
+    <div id="transcript" style="margin-top:18px;text-align:left"></div>
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" id="usevoice" disabled onclick="S.voices['${id}']=$('#vtext').value;resolve('${id}','voice','已补上口播 ✓')">使用</button></div>`};
+};
+function toggleRec(id){
+  const mic=$('#mic'),wave=$('#wave'),tip=$('#rectip');
+  if(!mic.classList.contains('rec')){mic.classList.add('rec');wave.classList.add('on');tip.textContent='正在录音… 再点一次结束';$('#transcript').innerHTML='';$('#usevoice').disabled=true;return;}
+  mic.classList.remove('rec');wave.classList.remove('on');tip.textContent='识别中…';
+  later(()=>{const s=steps().find(x=>x.id===id);tip.textContent='点击重录';
+    $('#transcript').innerHTML=`<div class="muted small" style="margin-bottom:6px">识别结果（可修改）</div><textarea class="input" id="vtext" rows="2">${esc(s.voice)}</textarea>`;
+    $('#usevoice').disabled=false;},800);
+}
+
+SCREENS.confirm=({id})=>{
+  const s=steps().find(x=>x.id===id), d=D(), ids=Object.keys(d.clips);
+  return {html:`${topBar('这步我拍了')}
+  <div class="body">
+    <div class="h1" style="font-size:19px">「${esc(s.name)}」在哪一段？</div>
+    <div class="muted" style="margin-top:6px;font-size:13px">选出来，AI 会重新检查，并记住这次纠正。</div>
+    <div class="grid4" style="margin-top:16px">${ids.map(cid=>`<div onclick="pickClip(this,'${cid}')">${frame(d.clips[cid],{num:cid})}</div>`).join('')}</div>
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" id="cfbtn" disabled onclick="doConfirm('${id}')">确认</button></div>`};
+};
+function pickClip(el,cid){document.querySelectorAll('.grid4 > div').forEach(x=>x.firstElementChild.classList.remove('sel-clip'));el.firstElementChild.classList.add('sel-clip');S._pick=cid;$('#cfbtn').disabled=false;}
+function doConfirm(id){
+  const b=$('#cfbtn');b.innerHTML='<div class="spinner"></div> 重新检查中';b.disabled=true;
+  later(()=>{S.confirmedClip[id]=S._pick;S.res[id]='confirmed';goReport();toast('已更新，AI 会记住这次纠正');},1000);
+}
+
+SCREENS.generating=()=>({html:`${topBar('生成成片',{back:false})}
+  <div class="body" style="text-align:center">
+    <div class="empty-ic"><div class="spinner" style="width:30px;height:30px;border-width:3px"></div></div>
+    <div class="h1" style="font-size:19px">正在生成成片</div>
+    <div class="muted" style="margin-top:10px;line-height:1.9;font-size:13px" id="gensteps">按步骤排列素材…</div>
+  </div>`,after:()=>{
+    const msgs=['按步骤排列素材…','插入补充的卡片和片段…','加上步骤字幕…','生成封面…'];
+    msgs.forEach((m,i)=>later(()=>{const e=$('#gensteps');if(e)e.textContent=m;},i*450));
+    later(()=>go('preview',{},{replace:true}),1900);
+  }});
+
+function buildSeq(mode){
+  const d=D(), seq=[];
+  const clipSeg=(id,o={})=>({html:frame(d.clips[id],{label:false,dur:false,...o}),cap:o.cap||d.clips[id].t,badge:o.badge});
+  steps().forEach(s=>{
+    const r=mode==='after'?S.res[s.id]:null;
+    const name=S.type==='tutorial'?s.name:null;
+    if(r==='confirmed'){seq.push(clipSeg(S.confirmedClip[s.id],{cap:name||d.clips[S.confirmedClip[s.id]].t}));return;}
+    if(r==='found'){const c=d.clips[s.found.clip];seq.push({html:frame(c,{label:false,dur:false,badge:'原素材找回',bc:'b-green'}),cap:s.name});}
+    if(r==='reshoot'&&!s.clips.length){seq.push(clipSeg(s.rclip,{cap:s.name,badge:'补拍',bc:'b-green',fixed:true}));return;}
+    if(r==='voice'&&!s.clips.length){seq.push(clipSeg(s.voiceClip,{cap:'🎙 '+(S.voices[s.id]||s.voice),badge:'补口播',bc:'b-green'}));return;}
+    s.clips.forEach((id,i)=>{
+      const o={cap:name?`${name}｜${d.clips[id].t}`:d.clips[id].t};
+      if(r==='reshoot'&&d.clips[id].dark){o.fixed=true;o.badge='补拍';o.bc='b-green';}
+      if(r==='brighten'&&d.clips[id].dark){o.bright=true;o.badge='已提亮';o.bc='b-amber';}
+      if(r==='voice'&&i===0){o.cap='🎙 '+(S.voices[s.id]||s.voice);o.badge='补口播';o.bc='b-green';}
+      seq.push(clipSeg(id,o));
+    });
+    if(r==='card'){const c=S.cards[s.id]||s.card;seq.push({html:cardFrame(c,{badge:'示意卡片'}),cap:''});}
+    if(r==='ai'){seq.push({html:aiFrame({}),cap:'烤箱里…'});}
+  });
+  return seq;
+}
+SCREENS.preview=()=>{
+  const st=steps(), n=understood(), cnt=k=>Object.values(S.res).filter(v=>v===k).length;
+  const tut=S.type==='tutorial';
+  return {html:`${topBar('成片预览',{onBack:'goReport()'})}
+  <div class="body">
+    <div class="seg-tabs"><button class="${S.player==='before'?'on':''}" onclick="S.player='before';render()">修复前</button><button class="${S.player==='after'?'on':''}" onclick="S.player='after';render()">修复后</button></div>
+    <div class="player" id="player" onclick="togglePlay()"></div>
+    ${S.player==='after'?`<div class="statgrid">
+      <div><b>${tut?n+'/'+st.length:cnt('voice')+cnt('found')+cnt('card')}</b>${tut?'步看得懂':'条建议采纳'}</div>
+      <div><b>${cnt('reshoot')+cnt('found')+cnt('confirmed')}</b>真实画面补回</div>
+      <div><b>${cnt('card')}</b>示意卡片</div>
+      <div><b>${cnt('ai')}</b>AI 过渡</div></div>`
+    :`<div class="explain" style="margin-top:14px">修复前：${tut?'缺少软化和过筛，烘烤后直接跳到出炉，出炉画面偏暗。':'开场是一段空镜，全片没有你自己，结尾停在夜景上。'}</div>`}
+    <div class="after-acts">
+      <button onclick="go('nextlist')"><span>📝</span>下次拍摄清单</button>
+      <button onclick="toast('进入小影编辑器继续精修（Demo 未展开）')"><span>✂️</span>去编辑器精修</button>
+      <button onclick="goHome();toast('可以开始检查下一条了')"><span>🩺</span>再检查一条</button>
+    </div>
+  </div>
+  <div class="bottombar"><button class="btn btn-ghost" onclick="exportFilm()">导出</button><button class="btn btn-primary" onclick="go('publish')">发布到小红书</button></div>`,after:startPlayer};
+};
+let playIdx=0,playTimer=null,paused=false;
+function startPlayer(){
+  const seq=buildSeq(S.player), el=$('#player'), DUR=1700;
+  el.innerHTML=`<div class="prog">${seq.map(()=>'<i><b></b></i>').join('')}</div>`+seq.map(s=>`<div class="seg">${s.html}${s.cap?`<div class="cap">${esc(s.cap)}</div>`:''}</div>`).join('')+'<div class="paused">▶</div>';
+  el.style.setProperty('--dur',DUR+'ms');
+  playIdx=0;paused=false;
+  const show=()=>{
+    const segs=el.querySelectorAll('.seg'),bars=el.querySelectorAll('.prog i');
+    if(!segs.length)return;
+    segs.forEach((s,i)=>s.classList.toggle('on',i===playIdx));
+    bars.forEach((b,i)=>{b.className=i<playIdx?'past':i===playIdx?'cur':'';});
+    const cur=bars[playIdx];if(cur){const bb=cur.firstElementChild;bb.style.animation='none';void bb.offsetWidth;bb.style.animation='';}
+    const segOn=segs[playIdx];const fi=segOn.querySelector('.frame-img');if(fi){fi.style.animation='none';void fi.offsetWidth;fi.style.animation='';}
+  };
+  const tick=()=>{if(!$('#player'))return;if(!paused){playIdx=(playIdx+1)%seq.length;show();}playTimer=later(tick,DUR);};
+  show();playTimer=later(tick,DUR);
+}
+function togglePlay(){paused=!paused;$('#player').classList.toggle('is-paused',paused);}
+function exportFilm(){
+  sheet(`<div style="font-weight:700;font-size:17px" id="exT">正在导出 1080P…</div><div class="bar" style="margin-top:16px"><i id="exB"></i></div><div class="btns" id="exBtns"></div>`);
+  let p=0;const step=()=>{p+=12+Math.random()*14;if(p>=100)p=100;const b=$('#exB');if(!b)return;b.style.width=p+'%';
+    if(p<100){later(step,180);return;}
+    $('#exT').textContent='已保存到相册 ✓';
+    $('#exBtns').innerHTML=`<button class="btn btn-primary" onclick="go('publish')">发布到小红书</button><button class="btn btn-ghost" onclick="closeSheet()">完成</button>`;};
+  later(step,200);
+}
+
+SCREENS.publish=()=>{
+  const cap=D().caption[S.capIdx];
+  return {html:`${topBar('发布到小红书')}
+  <div class="body">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="width:84px">${S.type==='tutorial'?cardFrame({title:'7 步做巴斯克',body:'新手也不翻车'},{style:1}):frame(D().clips[2],{label:false,dur:false})}</div>
+      <div style="flex:1"><div class="muted small">AI 生成的封面和文案</div><div style="font-weight:700;font-size:15px;line-height:1.45;margin-top:6px">${esc(cap.title)}</div></div>
+    </div>
+    <div class="h2">正文</div>
+    <div class="caption-box">${esc(cap.body)}</div>
+    ${S.type==='tutorial'?'<div class="explain" style="margin-top:10px">步骤清单来自体检时对照的步骤，你补充的卡片内容也已写进去，评论区少一些“这步怎么做”的提问。</div>':''}
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" onclick="S.capIdx=1-S.capIdx;render()">↻ 换一版</button>
+      <button class="btn btn-ghost btn-sm" onclick="copyCap()">复制文案</button>
+    </div>
+  </div>
+  <div class="bottombar"><button class="btn btn-primary" onclick="toast('将跳转小红书发布页（Demo）')">去小红书发布</button></div>`};
+};
+function copyCap(){const c=D().caption[S.capIdx];const t=c.title+'\n\n'+c.body;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('已复制'),()=>toast('已复制'));}
+
+SCREENS.nextlist=()=>{
+  const gaps=steps().filter(s=>isGap(s)&&s.tip);
+  return {html:`${topBar('下次拍摄清单')}
+  <div class="body">
+    <div class="h1" style="font-size:19px">这次学到的 ${gaps.length} 件事</div>
+    <div class="muted" style="margin-top:6px;font-size:13px">下次拍${S.type==='tutorial'?'烘焙教程':' vlog '}时，开拍前会提醒你。</div>
+    <div style="margin-top:10px">${gaps.map(s=>`<div class="list-li"><div class="ck"></div><div style="flex:1"><div style="line-height:1.5">${esc(s.tip)}</div>
+      <div class="small" style="margin-top:4px;color:var(--faint)">来自「${esc(s.name)}」${S.res[s.id]==='skip'?' · 这次跳过了':S.res[s.id]?' · 这次已补救':''}</div></div></div>`).join('')}</div>
+    <div class="card" style="display:flex;align-items:center;margin-top:18px"><div style="flex:1"><b>开拍前提醒我</b><div class="muted small" style="margin-top:3px">打开相机拍同类内容时，顶部显示清单</div></div>
+      <button class="switch ${S.remind?'on':''}" style="background:none" onclick="S.remind=!S.remind;this.classList.toggle('on')"><i></i></button></div>
+  </div>`};
+};
+
+/* ============ 演示控制台 ============ */
+const SCEN=[['normal','正常流程',''],['fail','分析失败','网络中断'],['slow','网络很慢','加载更久'],['unknown','认不出主题','手动选择'],['wrong','AI 误判','多报一处']];
+function consoleHTML(){
+  return `<h1 style="font-size:16px;margin-bottom:10px">演示控制台</h1>
+  <div class="group"><div style="font-weight:600;color:var(--ink);margin-bottom:4px">场景</div>
+    ${SCEN.map(s=>`<label><input type="radio" name="sc" ${S.scenario===s[0]?'checked':''} onchange="setScenario('${s[0]}')"> ${s[1]}<small>${s[2]}</small></label>`).join('')}
+    <div style="font-size:11px;margin-top:6px">切换后从「开始体检」重新走一遍即可看到效果</div></div>
+  <div class="group"><div style="font-weight:600;color:var(--ink);margin-bottom:8px">快速跳转</div>
+    <div class="jump"><button onclick="jump('home')">首页</button><button onclick="jump('setup')">体检设置</button>
+    <button onclick="jump('report')">体检报告</button><button onclick="jump('reshoot')">补拍</button>
+    <button onclick="jump('preview')">成片预览</button><button onclick="jump('vlog')">vlog 示例</button></div></div>
+  <button class="reset" onclick="resetState(true);goHome();closeDrawer();toast('已重置')">重置 Demo</button>`;
+}
+function renderConsole(){const c=$('#console');if(c)c.innerHTML=consoleHTML();}
+function setScenario(s){
+  S.scenario=s;
+  if(['fail','slow','unknown'].includes(s)){S.stack=[{screen:'home',params:{}}];S.screen='setup';S.params={};clearTimers();closeSheet();render();toast('已切换场景，点「开始检查」查看');}
+  else if(s==='wrong'){S.type='tutorial';delete S.res.s5;S.stack=[{screen:'home',params:{}}];S.screen='';go('report',{},{replace:true});toast('AI 多报了「铺油纸」，试试「这步我拍了」');}
+  else renderConsole();
+  closeDrawer();
+}
+function jump(t){
+  closeDrawer();S.stack=[{screen:'home',params:{}}];
+  if(t==='home'){goHome();return;}
+  if(t==='vlog'){S.type='vlog';S.res={};S.screen='';go('setup',{},{replace:true});return;}
+  if(S.type!=='tutorial'){S.type='tutorial';S.res={};}
+  if(t==='setup'){S.screen='';go('setup',{},{replace:true});return;}
+  S.stack.push({screen:'setup',params:{}});
+  if(t==='report'){S.screen='';go('report',{},{replace:true});return;}
+  if(t==='reshoot'){S.screen='';go('report',{},{replace:true});S.tries=0;go('reshoot',{id:'s7'});return;}
+  if(t==='preview'){
+    Object.assign(S.res,{s2:'card',s4:'found',s6:'card',s7:'reshoot'});S.player='after';
+    S.screen='';go('report',{},{replace:true});go('preview');return;}
+}
+function openDrawer(){$('#drawer-panel').innerHTML=`<div class="side console">${consoleHTML()}</div><div class="side" style="margin-top:18px">${$('#intro').innerHTML}</div>`;$('#drawer').classList.add('open');}
+function closeDrawer(){$('#drawer').classList.remove('open');}
+
+render();
+</script>
+</body>
+</html>
